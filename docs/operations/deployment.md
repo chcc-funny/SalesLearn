@@ -4,7 +4,7 @@ category: operations
 tags: [部署, Vercel, CI/CD]
 version: 1.0.0
 created: 2026-04-21
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 status: active
 ---
 
@@ -50,7 +50,7 @@ BLOB_READ_WRITE_TOKEN=<token>
 |---|---|---|
 | Production | 生产环境 | push to `main` |
 | Preview | 预览环境 | push to `develop` / PR |
-| Development | 本地开发 | `pnpm dev` |
+| Development | 本地开发 | `npm run dev` |
 
 ---
 
@@ -61,7 +61,7 @@ BLOB_READ_WRITE_TOKEN=<token>
 1. 在 Vercel 创建项目，关联 GitHub 仓库
 2. 配置环境变量（参考 2.1）
 3. 在 Neon 创建数据库，获取连接字符串
-4. 运行数据库迁移：`pnpm db:migrate`
+4. 运行数据库迁移：`npx drizzle-kit generate && npx drizzle-kit push`
 5. 推送代码到 `main` 分支
 6. Vercel 自动构建部署
 
@@ -83,16 +83,16 @@ Merge to main → Production 自动部署
 
 ```bash
 # 安装依赖
-pnpm install
+npm install
 
 # 环境变量
 cp .env.example .env.local
 
-# 数据库迁移
-pnpm db:migrate
+# 数据库迁移（生成迁移文件并推送到数据库）
+npx drizzle-kit generate && npx drizzle-kit push
 
 # 启动开发服务器
-pnpm dev
+npm run dev
 ```
 
 ---

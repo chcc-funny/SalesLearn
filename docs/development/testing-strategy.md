@@ -4,7 +4,7 @@ category: development
 tags: [测试, TDD, 单元测试, E2E]
 version: 1.0.0
 created: 2026-04-21
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 status: active
 ---
 
@@ -87,21 +87,23 @@ IMPROVE → 重构（保持测试通过）
 
 ## 5. 测试命令
 
+> **注意**：测试基础设施尚未搭建（Vitest/Playwright 暂未安装），以下命令为后续阶段规划，待相关依赖安装后可用。
+
 ```bash
 # 单元测试
-pnpm test
+npm test
 
 # 单元测试（监听模式）
-pnpm test:watch
+npm run test:watch
 
 # 覆盖率报告
-pnpm test:coverage
+npm run test:coverage
 
 # E2E 测试
-pnpm test:e2e
+npm run test:e2e
 
 # E2E 测试（UI 模式）
-pnpm test:e2e:ui
+npm run test:e2e:ui
 ```
 
 ---

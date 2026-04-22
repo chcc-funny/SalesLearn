@@ -4,7 +4,7 @@ category: development
 tags: [代码规范, TypeScript, React, Next.js]
 version: 1.0.0
 created: 2026-04-21
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 status: active
 ---
 
@@ -15,8 +15,9 @@ status: active
 - **语言**：TypeScript（strict mode）
 - **前端**：React 18 + Next.js 14 App Router
 - **样式**：TailwindCSS + shadcn/ui
-- **格式化**：Prettier + ESLint
-- **包管理**：pnpm
+- **格式化**：Next.js 内置 ESLint（不单独使用 Prettier）
+- **包管理**：npm
+- **ORM**：Drizzle ORM（所有数据库操作通过 Drizzle 完成，禁止使用原始 SQL）
 
 ---
 
@@ -102,6 +103,7 @@ export function ComponentName({ prop1, prop2 }: Props) {
 ## 6. 错误处理
 
 - API 路由：统一使用 try/catch + NextResponse
+- API 响应信封格式：`{ success: boolean, data: T | null, error: string | null }`
 - 客户端：使用 Error Boundary + Toast 通知
 - 表单：使用 Zod schema 验证
 - 绝不静默吞掉错误

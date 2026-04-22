@@ -2,9 +2,9 @@
 title: SalesLearn - API 接口文档
 category: api
 tags: [API, 接口文档, REST]
-version: 1.0.0
+version: 1.1.0
 created: 2026-04-21
-last_updated: 2026-04-21
+last_updated: 2026-04-22
 status: active
 ---
 
@@ -85,28 +85,75 @@ Authorization: Bearer <token>
 
 ## API 分组
 
-> 本文档为 API 入口导航。各接口的详细设计（Request/Response 示例、处理流程）请参阅 [`architecture/api-routes.md`](../architecture/api-routes.md)。
+> 各接口的详细设计（Request/Response 示例、处理流程）请参阅 [`architecture/api-routes.md`](../architecture/api-routes.md)。
 
 ### 1. 认证 (`/api/auth`)
-详见 NextAuth.js 文档，提供标准的认证端点。
+
+NextAuth.js 标准认证端点，支持员工/主管双角色登录。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET/POST | `/api/auth/[...nextauth]` | NextAuth 标准端点（登录、登出、回调、Session 等） |
 
 ### 2. 知识库 (`/api/knowledge`)
-知识点的 CRUD、文件上传、AI 切分、审核。
-详见 `@docs/architecture/api-routes.md`
+
+知识点的 CRUD、文件上传、AI 切分、审核流程。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/knowledge` | 知识点列表（分页 + 状态筛选 + 分类筛选） |
+| POST | `/api/knowledge` | 创建知识点（参数校验 + tenant_id 注入） |
+| GET | `/api/knowledge/[id]` | 知识点详情 |
+| PUT | `/api/knowledge/[id]` | 更新知识点 |
+| DELETE | `/api/knowledge/[id]` | 删除知识点 |
+| POST | `/api/knowledge/upload` | 文件上传 + AI 切分触发 |
+| GET | `/api/knowledge/tasks/[taskId]` | 切分任务进度查询 |
+| POST | `/api/knowledge/[id]/review` | 审核（通过/驳回） |
 
 ### 3. 测试 (`/api/quiz`)
-AI 出题、题目审核、答题记录。
-详见 `@docs/architecture/api-routes.md`
 
-### 4. 费曼讲解 (`/api/feynman`)
-录音上传、语音转写、AI 评分、客户对话。
-详见 `@docs/architecture/api-routes.md`
+AI 出题、题目管理、审核、答题判分。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/quiz` | 题目列表 |
+| POST | `/api/quiz` | 创建题目 |
+| POST | `/api/quiz/generate` | AI 出题（Kimi K2 via OpenRouter） |
+| GET | `/api/quiz/by-knowledge/[knowledgeId]` | 获取知识点已发布题目 |
+| POST | `/api/quiz/[id]/review` | 题目审核 |
+| POST | `/api/quiz/answer` | 提交答案（判分 + 错题入库） |
+
+### 4. 学习 (`/api/learning`)
+
+学习进度跟踪与统计。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/learning/progress` | 学习进度统计 |
 
 ### 5. 错题本 (`/api/review`)
-错题列表、间隔复习更新。
 
-### 6. 报告 (`/api/report`)
-个人评估数据、团队看板数据。
+错题列表查询、间隔复习更新。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/review/list` | 错题本列表（按间隔排序 + 待复习筛选） |
+| POST | `/api/review/update` | 复习结果更新（连对 3 次移出） |
+
+### 6. 费曼讲解 (`/api/feynman`)
+
+录音上传、语音转写、AI 评分、讲解记录。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/feynman/upload-audio` | 音频上传（max 25MB） |
+| POST | `/api/feynman/transcribe` | 语音转文字（腾讯云 ASR） |
+| POST | `/api/feynman/evaluate` | AI 评分（Claude Sonnet via OpenRouter，四维评分） |
+| GET | `/api/feynman/records` | 费曼讲解记录 |
+
+### 7. 报告 (`/api/report`)
+
+> Phase 5 计划中，尚未实现。
 
 ---
 
