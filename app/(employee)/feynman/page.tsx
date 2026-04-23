@@ -26,6 +26,8 @@ interface KnowledgeSummary {
   bestScore: number | null;
   isPassed: boolean;
   lastAttempt: string | null;
+  stageBUnlocked: boolean;
+  stageBPassed: boolean;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -207,8 +209,19 @@ function FeynmanKnowledgeCard({
         )}
       </div>
 
-      <div className="ml-3 shrink-0">
-        {summary?.isPassed ? (
+      <div className="ml-3 shrink-0 flex flex-col items-end gap-1">
+        {summary?.stageBPassed ? (
+          <Badge className="bg-[#7C3AED] text-white border-transparent">
+            实战通过
+          </Badge>
+        ) : summary?.stageBUnlocked ? (
+          <Badge
+            variant="outline"
+            className="text-[#7C3AED] border-[#7C3AED]/30"
+          >
+            可实战
+          </Badge>
+        ) : summary?.isPassed ? (
           <Badge className="bg-success text-white border-transparent">
             已通过
           </Badge>
@@ -241,24 +254,37 @@ function buildSummaries(
   for (const r of records) {
     if (!r.knowledgeId) continue;
 
+    const isStageB = (r.stage ?? "").toUpperCase() === "B";
+    const isStageA = !isStageB;
     const existing = map[r.knowledgeId];
+
     if (!existing) {
       map[r.knowledgeId] = {
         attempts: 1,
-        bestScore: r.totalScore,
-        isPassed: r.isPassed ?? false,
+        bestScore: isStageA ? r.totalScore : null,
+        isPassed: isStageA && (r.isPassed ?? false),
         lastAttempt: r.createdAt,
+        stageBUnlocked: isStageA && (r.totalScore ?? 0) >= 80,
+        stageBPassed: isStageB && (r.isPassed ?? false),
       };
     } else {
+      const newBestScore =
+        isStageA &&
+        r.totalScore !== null &&
+        (existing.bestScore === null || r.totalScore > existing.bestScore)
+          ? r.totalScore
+          : existing.bestScore;
+
       map[r.knowledgeId] = {
         attempts: existing.attempts + 1,
-        bestScore:
-          r.totalScore !== null &&
-          (existing.bestScore === null || r.totalScore > existing.bestScore)
-            ? r.totalScore
-            : existing.bestScore,
-        isPassed: existing.isPassed || (r.isPassed ?? false),
-        lastAttempt: existing.lastAttempt, // Already sorted desc, first is latest
+        bestScore: newBestScore,
+        isPassed: existing.isPassed || (isStageA && (r.isPassed ?? false)),
+        lastAttempt: existing.lastAttempt,
+        stageBUnlocked:
+          existing.stageBUnlocked ||
+          (isStageA && (r.totalScore ?? 0) >= 80),
+        stageBPassed:
+          existing.stageBPassed || (isStageB && (r.isPassed ?? false)),
       };
     }
   }

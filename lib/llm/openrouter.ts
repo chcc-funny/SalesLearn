@@ -14,7 +14,7 @@ export const LLM_MODELS = {
 
 export type ModelId = (typeof LLM_MODELS)[keyof typeof LLM_MODELS];
 
-interface ChatMessage {
+export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
@@ -135,4 +135,147 @@ export async function chatCompletionJSON<T>(
   } catch {
     throw new Error("LLM 返回的 JSON 格式无效");
   }
+}
+
+export type ChatCompletionStreamOptions = Omit<ChatCompletionOptions, "jsonMode">;
+
+/**
+ * 流式调用 OpenRouter Chat Completion API
+ *
+ * 返回 ReadableStream，逐 chunk 输出文本 token（UTF-8 编码）
+ */
+export async function chatCompletionStream(
+  options: ChatCompletionStreamOptions
+): Promise<ReadableStream<Uint8Array>> {
+  const { model, messages, temperature = 0.7, maxTokens = 4096 } = options;
+
+  const body: Record<string, unknown> = {
+    model,
+    messages,
+    temperature,
+    max_tokens: maxTokens,
+    stream: true,
+  };
+
+  const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://saleslearn.vercel.app",
+      "X-Title": "SalesLearn",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `OpenRouter API 错误 (${response.status}): ${errorText}`
+    );
+  }
+
+  if (!response.body) {
+    throw new Error("OpenRouter 返回空的响应流");
+  }
+
+  return parseSSEStream(response.body);
+}
+
+/**
+ * 解析 SSE 字节流，提取文本 token 并输出为 ReadableStream
+ */
+function parseSSEStream(
+  source: ReadableStream<Uint8Array>
+): ReadableStream<Uint8Array> {
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = "";
+
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const reader = source.getReader();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) {
+            // 处理 buffer 中可能残留的最后一行
+            processLines(buffer, controller, encoder);
+            controller.close();
+            return;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          // 最后一个元素可能是不完整行，保留在 buffer 中
+          buffer = lines.pop() ?? "";
+
+          const shouldClose = processLines(
+            lines.join("\n"),
+            controller,
+            encoder
+          );
+
+          if (shouldClose) {
+            controller.close();
+            reader.cancel();
+            return;
+          }
+        }
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
+}
+
+/**
+ * 逐行处理 SSE 数据，提取 delta.content 并 enqueue
+ *
+ * @returns true 表示遇到 [DONE]，应关闭流
+ */
+function processLines(
+  text: string,
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  encoder: TextEncoder
+): boolean {
+  const lines = text.split("\n");
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed === "" || trimmed.startsWith(":")) {
+      continue;
+    }
+
+    if (!trimmed.startsWith("data:")) {
+      continue;
+    }
+
+    const payload = trimmed.slice("data:".length).trim();
+
+    if (payload === "[DONE]") {
+      return true;
+    }
+
+    try {
+      const parsed = JSON.parse(payload) as {
+        choices?: Array<{
+          delta?: { content?: string };
+        }>;
+      };
+
+      const content = parsed.choices?.[0]?.delta?.content;
+
+      if (content) {
+        controller.enqueue(encoder.encode(content));
+      }
+    } catch {
+      // 跳过无法解析的行
+    }
+  }
+
+  return false;
 }

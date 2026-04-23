@@ -314,6 +314,9 @@ export default function FeynmanPracticePage() {
                 canUnlockStageB={evalResult.canUnlockStageB}
                 onRetry={handleRetry}
                 onBack={() => router.push("/feynman")}
+                onUnlock={() =>
+                  router.push(`/feynman/${params.knowledgeId}/chat`)
+                }
               />
             </div>
           )}

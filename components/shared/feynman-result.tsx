@@ -21,6 +21,7 @@ interface FeynmanResultProps {
   canUnlockStageB: boolean;
   onRetry: () => void;
   onBack: () => void;
+  onUnlock?: () => void;
 }
 
 function scoreColorClass(score: number): string {
@@ -50,6 +51,7 @@ export function FeynmanResult({
   canUnlockStageB,
   onRetry,
   onBack,
+  onUnlock,
 }: FeynmanResultProps) {
   return (
     <div className="space-y-4">
@@ -158,7 +160,10 @@ export function FeynmanResult({
           返回列表
         </Button>
         {canUnlockStageB ? (
-          <Button className="flex-1 bg-success hover:bg-success/90 text-white">
+          <Button
+            className="flex-1 bg-success hover:bg-success/90 text-white"
+            onClick={onUnlock}
+          >
             解锁 AI 客户实战
           </Button>
         ) : (
