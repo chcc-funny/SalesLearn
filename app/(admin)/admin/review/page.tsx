@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function ReviewPage() {
+  const router = useRouter();
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,11 +82,16 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-text-primary">审核管理</h1>
-          <p className="text-sm text-text-secondary">
-            {total} 个知识点待审核
-          </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-text-primary">审核管理</h1>
+            <p className="text-sm text-text-secondary">
+              {total} 个知识点待审核
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => router.push("/admin")}>
+            返回管理后台
+          </Button>
         </div>
 
         {isLoading ? (

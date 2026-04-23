@@ -121,8 +121,8 @@ export default function QuizGeneratePage() {
               </p>
             )}
           </div>
-          <Button variant="outline" onClick={() => router.back()}>
-            返回
+          <Button variant="outline" onClick={() => router.push(`/admin/knowledge/${params.id}/edit`)}>
+            返回编辑
           </Button>
         </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,6 +31,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function QuizReviewPage() {
+  const router = useRouter();
   const [items, setItems] = useState<QuestionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -99,17 +101,22 @@ export default function QuizReviewPage() {
               {items.length} 道题目待审核
             </p>
           </div>
-          {items.length > 0 && (
-            <Button
-              className="bg-success hover:bg-success/90 text-white"
-              disabled={actionLoading === "batch"}
-              onClick={handleBatchApprove}
-            >
-              {actionLoading === "batch"
-                ? "批量审核中..."
-                : `全部通过 (${items.length})`}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push("/admin")}>
+              返回管理后台
             </Button>
-          )}
+            {items.length > 0 && (
+              <Button
+                className="bg-success hover:bg-success/90 text-white"
+                disabled={actionLoading === "batch"}
+                onClick={handleBatchApprove}
+              >
+                {actionLoading === "batch"
+                  ? "批量审核中..."
+                  : `全部通过 (${items.length})`}
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (

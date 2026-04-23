@@ -92,12 +92,17 @@ export default function KnowledgeListPage() {
             <h1 className="text-2xl font-semibold text-text-primary">知识库管理</h1>
             <p className="text-sm text-text-secondary">共 {total} 个知识点</p>
           </div>
-          <Button
-            className="bg-primary-500 hover:bg-primary-600"
-            onClick={() => router.push("/admin/knowledge/upload")}
-          >
-            上传资料
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push("/admin")}>
+              返回管理后台
+            </Button>
+            <Button
+              className="bg-primary-500 hover:bg-primary-600"
+              onClick={() => router.push("/admin/knowledge/upload")}
+            >
+              上传资料
+            </Button>
+          </div>
         </div>
 
         {/* 筛选栏 */}
