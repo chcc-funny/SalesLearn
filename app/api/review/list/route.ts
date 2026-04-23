@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { eq, and, lte, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { errorBook, questions, knowledgeBase } from "@/lib/db/schema";
 import { withAuth } from "@/lib/auth/guard";

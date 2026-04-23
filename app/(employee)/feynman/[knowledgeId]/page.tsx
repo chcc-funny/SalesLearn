@@ -42,7 +42,7 @@ export default function FeynmanPracticePage() {
   const [knowledge, setKnowledge] = useState<KnowledgeData | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioContentType, setAudioContentType] = useState("audio/webm");
-  const [audioDuration, setAudioDuration] = useState(0);
+
   const [transcript, setTranscript] = useState("");
   const [evalResult, setEvalResult] = useState<EvalResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
