@@ -119,10 +119,7 @@ export default function QuizPage() {
           },
         ]);
 
-        // 答对自动跳下一题
-        if (isCorrect) {
-          setTimeout(() => goNext(), 1200);
-        }
+        // 不自动跳题，等用户手动点击"下一题"或"查看结果"
       }
     } catch {
       // 静默
@@ -295,10 +292,15 @@ export default function QuizPage() {
             </div>
           )}
 
-          {/* 答对反馈 */}
+          {/* 答对反馈 + 解析 */}
           {answerState === "correct" && (
-            <div className="mt-4 rounded-lg bg-success-bg p-3 text-center">
+            <div className="mt-4 rounded-lg bg-success-bg p-3">
               <p className="text-sm font-medium text-success">回答正确！</p>
+              {correctAnswer && explanations[correctAnswer] && (
+                <p className="mt-1 text-xs text-text-secondary">
+                  解析：{explanations[correctAnswer]}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -316,12 +318,12 @@ export default function QuizPage() {
               {isSubmitting ? "提交中..." : "提交答案"}
             </Button>
           )}
-          {answerState === "incorrect" && (
+          {(answerState === "correct" || answerState === "incorrect") && (
             <Button
               className="w-full bg-primary-500 hover:bg-primary-600"
               onClick={goNext}
             >
-              下一题
+              {currentIndex >= questions.length - 1 ? "查看结果" : "下一题"}
             </Button>
           )}
           {answerState === "idle" && (

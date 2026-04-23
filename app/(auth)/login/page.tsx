@@ -34,12 +34,24 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        if (
+          result.error.includes("频繁") ||
+          result.error.includes("Too Many") ||
+          result.error === "RateLimitError"
+        ) {
+          setError("登录请求过于频繁，请稍后再试");
+        } else {
+          setError(result.error);
+        }
         return;
       }
 
       // 获取 session 判断角色跳转
       const res = await fetch("/api/auth/session");
+      if (res.status === 429) {
+        setError("请求过于频繁，请稍后再试");
+        return;
+      }
       const session = await res.json();
       const role = session?.user?.role;
 

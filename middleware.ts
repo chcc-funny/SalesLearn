@@ -17,7 +17,10 @@ export async function middleware(req: NextRequest) {
   }
 
   // API 限流（对所有 API 路由生效，包括公开路由）
-  if (pathname.startsWith("/api/")) {
+  // 排除只读的安全请求：csrf token 获取、session 查询
+  const isReadOnlyAuthPath =
+    pathname === "/api/auth/csrf" || pathname === "/api/auth/session";
+  if (pathname.startsWith("/api/") && !isReadOnlyAuthPath) {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
     const type = getRateLimitType(pathname);
     const { allowed, retryAfter } = checkRateLimit(`${ip}:${type}`, type);
