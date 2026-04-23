@@ -90,10 +90,8 @@ IMPROVE → 重构（保持测试通过）
 
 ## 5. 测试命令
 
-> **注意**：测试基础设施尚未搭建（Vitest/Playwright 暂未安装），以下命令为后续阶段规划，待相关依赖安装后可用。
-
 ```bash
-# 单元测试
+# 单元测试 + 集成测试
 npm test
 
 # 单元测试（监听模式）
@@ -101,12 +99,6 @@ npm run test:watch
 
 # 覆盖率报告
 npm run test:coverage
-
-# E2E 测试
-npm run test:e2e
-
-# E2E 测试（UI 模式）
-npm run test:e2e:ui
 ```
 
 ---
@@ -116,3 +108,44 @@ npm run test:e2e:ui
 - PR 提交时自动运行单元测试 + 集成测试
 - 合并到 develop 时运行 E2E 测试
 - 覆盖率低于 80% 阻止合并
+
+---
+
+## 7. 测试执行结果（2026-04-23）
+
+### 7.1 总体概况
+
+| 类型 | 文件数 | 用例数 | 通过 | 失败 |
+|------|--------|--------|------|------|
+| 单元测试 | 5 | 45 | 45 | 0 |
+| 集成测试 | 2 | 11 | 11 | 0 |
+| E2E 验证 | - | 6 | 5 | 1 (DB连接) |
+| **合计** | **7** | **62** | **61** | **1** |
+
+### 7.2 已测试模块覆盖率
+
+| 模块 | 行覆盖率 | 分支覆盖率 |
+|------|---------|-----------|
+| lib/api-response.ts | 100% | 66.7% |
+| lib/validations/feynman-checks.ts | 97.8% | 85.3% |
+| lib/rate-limit.ts | 83.3% | 82.4% |
+
+### 7.3 发现的问题
+
+1. ~~**[MEDIUM]** 登录失败时 API 返回原始 SQL 语句，存在信息泄露风险~~ ✅ 已修复
+2. **[LOW]** lib/ 总覆盖率 25.2%，需补充 asr/auth/llm/storage 模块测试
+3. ~~**[LOW]** rate-limit.ts 的定时清理逻辑未被覆盖~~ ✅ 已修复
+
+> 详细测试进度和更新日志见 `@docs/development/testing-progress.md`
+
+---
+
+## 8. 测试账号
+
+| 角色 | 姓名 | 邮箱 | 密码 |
+|------|------|------|------|
+| 主管 (manager) | 张主管 | `manager@saleslearn.com` | `admin123` |
+| 员工 (employee) | 李销售 | `employee1@saleslearn.com` | `test123` |
+| 员工 (employee) | 王销售 | `employee2@saleslearn.com` | `test123` |
+
+> 测试数据由 `npm run db:seed` 生成，租户 ID: `00000000-0000-0000-0000-000000000001`

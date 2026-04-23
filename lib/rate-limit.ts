@@ -25,15 +25,18 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
 
 const store = new Map<string, RateLimitEntry>();
 
-// 每 5 分钟清理过期条目
-setInterval(() => {
+/** 清理过期的限流条目（超过 5 分钟未活跃） */
+export function cleanupExpiredEntries(): void {
   const now = Date.now();
   store.forEach((entry, key) => {
     if (now - entry.lastRefill > 5 * 60 * 1000) {
       store.delete(key);
     }
   });
-}, 5 * 60 * 1000);
+}
+
+// 每 5 分钟自动清理过期条目
+setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
 
 /**
  * 根据 API 路径判断限流类别

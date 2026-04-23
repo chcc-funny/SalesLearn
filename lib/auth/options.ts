@@ -27,16 +27,23 @@ export const authOptions: NextAuthOptions = {
           throw new Error("请输入邮箱和密码");
         }
 
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(
-            and(
-              eq(users.email, credentials.email),
-              eq(users.isActive, true)
+        let user;
+        try {
+          const result = await db
+            .select()
+            .from(users)
+            .where(
+              and(
+                eq(users.email, credentials.email),
+                eq(users.isActive, true)
+              )
             )
-          )
-          .limit(1);
+            .limit(1);
+          user = result[0];
+        } catch (error) {
+          console.error("[auth] Database query failed:", error);
+          throw new Error("登录服务暂时不可用，请稍后重试");
+        }
 
         if (!user) {
           throw new Error("账号不存在或已被禁用");

@@ -36,6 +36,10 @@
 - `@docs/architecture/api-routes.md` - API 路由设计（路由列表、输入输出、权限验证）
 - `@docs/api/README.md` - API 接口文档（所有接口定义、请求响应格式、调用示例）
 
+### 开发文档
+- `@docs/development/testing-strategy.md` - 测试策略（TDD、分层测试、Mock策略）
+- `@docs/development/testing-progress.md` - 测试执行进度（用例通过率、覆盖率、问题跟踪）
+
 ## 核心模块
 
 1. **知识库管理**：资料上传 → AI 切分 → 人工审核 → 发布

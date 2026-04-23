@@ -3,16 +3,30 @@
  *
  * 使用方式: npx tsx lib/db/seed.ts
  * 前提: DATABASE_URL 环境变量已配置
+ *
+ * 测试账号:
+ *   主管: manager@saleslearn.com / admin123
+ *   员工1: employee1@saleslearn.com / test123
+ *   员工2: employee2@saleslearn.com / test123
+ *
+ * 支持重复执行（upsert 模式，已存在则跳过）
  */
 
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
+import { eq } from "drizzle-orm";
 import { users } from "./schema/users";
 import { knowledgeBase } from "./schema/knowledge-base";
 import { questions } from "./schema/questions";
 
 // 默认租户 ID
 const TENANT_ID = "00000000-0000-0000-0000-000000000001";
+
+// bcrypt hashes (verified)
+const HASH_ADMIN123 =
+  "$2b$10$VnIWKk8MmTV3zJTiDiOhzeBMf6MjOMD4O2vBgEbmUvYiAy2ycRjo6";
+const HASH_TEST123 =
+  "$2b$10$FRwEDxyLMf7DMwQQOL9FJeDqspCVlSpUJfzpZNWd9iv6qsO7.M/1m";
 
 async function seed() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -26,6 +40,18 @@ async function seed() {
 
   console.log("开始插入种子数据...");
 
+  // 检查是否已有数据（幂等）
+  const existingUsers = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, "manager@saleslearn.com"))
+    .limit(1);
+
+  if (existingUsers.length > 0) {
+    console.log("⚠️ 种子数据已存在，跳过插入。如需重新插入请先清空数据库。");
+    return;
+  }
+
   // 1. 创建用户
   const [manager] = await db
     .insert(users)
@@ -34,9 +60,8 @@ async function seed() {
       name: "张主管",
       phone: "13800000001",
       email: "manager@saleslearn.com",
-      // 密码: admin123 (bcrypt hash)
-      passwordHash:
-        "$2a$10$dXJ3SW6G7P50lGmMQgel6u0eWR5hvJiRuGHpB9J0xQR5Y0Kz1vKWe",
+      // 密码: admin123
+      passwordHash: HASH_ADMIN123,
       role: "manager",
     })
     .returning();
@@ -48,8 +73,8 @@ async function seed() {
       name: "李销售",
       phone: "13800000002",
       email: "employee1@saleslearn.com",
-      passwordHash:
-        "$2a$10$dXJ3SW6G7P50lGmMQgel6u0eWR5hvJiRuGHpB9J0xQR5Y0Kz1vKWe",
+      // 密码: test123
+      passwordHash: HASH_TEST123,
       role: "employee",
     })
     .returning();
@@ -61,8 +86,8 @@ async function seed() {
       name: "王销售",
       phone: "13800000003",
       email: "employee2@saleslearn.com",
-      passwordHash:
-        "$2a$10$dXJ3SW6G7P50lGmMQgel6u0eWR5hvJiRuGHpB9J0xQR5Y0Kz1vKWe",
+      // 密码: test123
+      passwordHash: HASH_TEST123,
       role: "employee",
     })
     .returning();
