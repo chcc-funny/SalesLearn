@@ -136,7 +136,10 @@ export async function chatCompletionJSON<T>(
   const result = await chatCompletion({ ...options, jsonMode: true });
 
   try {
-    const data = JSON.parse(result.content) as T;
+    const raw = result.content.trim();
+    // 兼容模型将 JSON 包裹在 markdown 代码块中的情况
+    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+    const data = JSON.parse(jsonStr) as T;
     return { data, usage: result.usage };
   } catch {
     throw new Error("LLM 返回的 JSON 格式无效");
