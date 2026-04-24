@@ -97,7 +97,7 @@ export async function processFileWithAI(
         { role: "user", content: buildUserPrompt(fileContent, fileName, category) },
       ],
       temperature: 0.3,
-      maxTokens: 8192,
+      maxTokens: 16384,
     });
 
     const points = data.knowledge_points;

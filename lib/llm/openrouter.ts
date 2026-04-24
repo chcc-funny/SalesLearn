@@ -139,7 +139,10 @@ export async function chatCompletionJSON<T>(
     const data = extractJSON<T>(result.content);
     return { data, usage: result.usage };
   } catch {
-    throw new Error(`LLM 返回的 JSON 格式无效，原始内容：${result.content.slice(0, 200)}`);
+    const truncated = result.content.length > 500
+      ? "（可能因 maxTokens 不足导致 JSON 截断）"
+      : "";
+    throw new Error(`LLM 返回的 JSON 格式无效${truncated}，原始内容：${result.content.slice(0, 300)}`);
   }
 }
 
