@@ -64,7 +64,7 @@ async function fetchCompletion(
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000);
+  const timeout = setTimeout(() => controller.abort(), 120_000);
 
   let response: Response;
   try {
@@ -82,7 +82,7 @@ async function fetchCompletion(
   } catch (err) {
     clearTimeout(timeout);
     if (err instanceof DOMException && err.name === "AbortError") {
-      throw new Error("OpenRouter 请求超时（90s），请尝试更小的文件或更快的模型");
+      throw new Error("OpenRouter 请求超时（120s），请尝试更小的文件或更快的模型");
     }
     throw err;
   }
@@ -145,9 +145,10 @@ export async function chatCompletion(
  * 调用 LLM 并解析 JSON 响应
  */
 export async function chatCompletionJSON<T>(
-  options: Omit<ChatCompletionOptions, "jsonMode">
+  options: Omit<ChatCompletionOptions, "jsonMode">,
+  maxRetries?: number
 ): Promise<{ data: T; usage: ChatCompletionResult["usage"] }> {
-  const result = await chatCompletion({ ...options, jsonMode: true });
+  const result = await chatCompletion({ ...options, jsonMode: true }, maxRetries);
 
   try {
     const data = extractJSON<T>(result.content);

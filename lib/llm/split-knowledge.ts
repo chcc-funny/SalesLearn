@@ -32,9 +32,9 @@ const SPLIT_SYSTEM_PROMPT = `你是一个专业的销售培训知识拆解专家
 - title: 知识点标题（简洁明了，不超过30字）
 - category: 分类，只能是以下之一：product（产品知识）、objection（客户异议处理）、closing（成交话术）、psychology（客户心理）
 - key_points: 核心要点数组（3-5个要点，每个要点一句话）
-- content: 详细说明（200-500字，通俗易懂）
-- examples: 案例或话术示例（包含客户问和销售回答的对话格式）
-- common_mistakes: 常见误区（2-3个新手容易犯的错误）
+- content: 详细说明（100-200字，通俗易懂）
+- examples: 一个简短的话术示例（客户问+销售答，控制在100字内）
+- common_mistakes: 常见误区（1-2个，每个一句话）
 
 要求：
 1. 每个知识点必须独立完整，可以单独学习
@@ -71,7 +71,7 @@ function buildUserPrompt(
 文件名：${fileName}
 
 --- 文件内容开始 ---
-${fileContent.slice(0, 15000)}
+${fileContent.slice(0, 8000)}
 --- 文件内容结束 ---
 
 请输出 JSON 格式的知识点数组。`;
@@ -88,14 +88,14 @@ export async function processFileWithAI(
 
   // 1. 调用 LLM 切分知识点
   const { data } = await chatCompletionJSON<SplitResult>({
-    model: model ?? LLM_MODELS.KIMI_K2,
+    model: model ?? LLM_MODELS.CLAUDE_HAIKU,
     messages: [
       { role: "system", content: SPLIT_SYSTEM_PROMPT },
       { role: "user", content: buildUserPrompt(fileContent, fileName, category) },
     ],
     temperature: 0.3,
     maxTokens: 16384,
-  });
+  }, 0);
 
   const points = data.knowledge_points;
 

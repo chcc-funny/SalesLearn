@@ -10,7 +10,7 @@ import { LLM_MODELS, type ModelId } from "@/lib/llm/openrouter";
 
 const VALID_MODELS = new Set<string>(Object.values(LLM_MODELS));
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export const POST = withAuth(
   async (req: NextRequest, { user }) => {

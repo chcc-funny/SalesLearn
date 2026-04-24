@@ -16,9 +16,9 @@ import { FileUpload } from "@/components/shared/file-upload";
 import { LLM_MODELS } from "@/lib/llm/openrouter";
 
 const MODEL_OPTIONS = [
-  { value: LLM_MODELS.KIMI_K2, label: "Kimi K2.6（默认，成本优化）" },
-  { value: LLM_MODELS.CLAUDE_SONNET, label: "Claude Sonnet 4（质量优先）" },
-  { value: LLM_MODELS.CLAUDE_HAIKU, label: "Claude Haiku 4.5（快速省钱）" },
+  { value: LLM_MODELS.CLAUDE_HAIKU, label: "Claude Haiku 4.5（默认，快速稳定）" },
+  { value: LLM_MODELS.CLAUDE_SONNET, label: "Claude Sonnet 4（质量优先，较慢）" },
+  { value: LLM_MODELS.KIMI_K2, label: "Kimi K2.6（最便宜，可能较慢）" },
 ];
 
 type UploadResult = {
@@ -29,7 +29,7 @@ type UploadResult = {
 export default function UploadKnowledgePage() {
   const router = useRouter();
   const [category, setCategory] = useState<string>("");
-  const [model, setModel] = useState<string>(LLM_MODELS.KIMI_K2);
+  const [model, setModel] = useState<string>(LLM_MODELS.CLAUDE_HAIKU);
   const [status, setStatus] = useState<"idle" | "processing" | "completed" | "failed">("idle");
   const [result, setResult] = useState<UploadResult | null>(null);
 
