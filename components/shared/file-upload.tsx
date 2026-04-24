@@ -56,6 +56,16 @@ export function FileUpload({
           body: formData,
         });
 
+        const contentType = res.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(
+            res.status === 504
+              ? "请求超时，请尝试上传更小的文件或选择更快的模型"
+              : `服务器错误 (${res.status})：${text.slice(0, 100)}`
+          );
+        }
+
         const json = await res.json();
 
         if (!json.success) {
