@@ -7,9 +7,9 @@ export const LLM_MODELS = {
   /** 知识切分、出题 — 成本优化 */
   KIMI_K2: "moonshotai/kimi-k2.6",
   /** 费曼评分、客户追问 — 质量优先 */
-  CLAUDE_SONNET: "anthropic/claude-sonnet-4-20250514",
+  CLAUDE_SONNET: "anthropic/claude-sonnet-4",
   /** 短文本任务 — 成本优化 */
-  CLAUDE_HAIKU: "anthropic/claude-haiku-4-5-20251001",
+  CLAUDE_HAIKU: "anthropic/claude-haiku-4.5",
 } as const;
 
 /** 支持 response_format: json_object 的模型白名单 */
