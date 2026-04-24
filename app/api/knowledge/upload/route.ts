@@ -19,7 +19,10 @@ export const POST = withAuth(
       const file = formData.get("file") as File | null;
       const category = formData.get("category") as string | null;
       const modelRaw = formData.get("model") as string | null;
-      const model = modelRaw && VALID_MODELS.has(modelRaw) ? (modelRaw as ModelId) : undefined;
+      if (modelRaw && !VALID_MODELS.has(modelRaw)) {
+        return errorResponse(`不支持的模型: ${modelRaw}`, ErrorCode.VALIDATION_ERROR);
+      }
+      const model = (modelRaw as ModelId) || undefined;
 
       if (!file) {
         return errorResponse("请选择要上传的文件", ErrorCode.VALIDATION_ERROR);

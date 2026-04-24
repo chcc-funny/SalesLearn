@@ -312,10 +312,19 @@ function extractJSON<T>(raw: string): T {
     }
   }
 
-  // 3. 提取第一个完整的 JSON 对象或数组
-  const jsonMatch = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
-  if (jsonMatch) {
-    return JSON.parse(jsonMatch[1]) as T;
+  // 3. 从第一个 { 或 [ 开始，贪婪截取到对应结尾
+  const startIdx = text.search(/[\{\[]/);
+  if (startIdx !== -1) {
+    const opener = text[startIdx];
+    const closer = opener === "{" ? "}" : "]";
+    const lastIdx = text.lastIndexOf(closer);
+    if (lastIdx > startIdx) {
+      try {
+        return JSON.parse(text.slice(startIdx, lastIdx + 1)) as T;
+      } catch {
+        // 继续
+      }
+    }
   }
 
   throw new Error("无法从响应中提取 JSON");
