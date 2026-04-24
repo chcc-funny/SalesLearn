@@ -12,6 +12,12 @@ export const LLM_MODELS = {
   CLAUDE_HAIKU: "anthropic/claude-haiku-4-5-20251001",
 } as const;
 
+/** 支持 response_format: json_object 的模型白名单 */
+const JSON_MODE_SUPPORTED_MODELS: ReadonlySet<string> = new Set([
+  LLM_MODELS.CLAUDE_SONNET,
+  LLM_MODELS.CLAUDE_HAIKU,
+]);
+
 export type ModelId = (typeof LLM_MODELS)[keyof typeof LLM_MODELS];
 
 export interface ChatMessage {
@@ -53,7 +59,7 @@ async function fetchCompletion(
     max_tokens: maxTokens,
   };
 
-  if (jsonMode) {
+  if (jsonMode && JSON_MODE_SUPPORTED_MODELS.has(model)) {
     body.response_format = { type: "json_object" };
   }
 
@@ -62,7 +68,7 @@ async function fetchCompletion(
     headers: {
       Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://saleslearn.vercel.app",
+      "HTTP-Referer": "https://saleslearn.aicarengine.com",
       "X-Title": "SalesLearn",
     },
     body: JSON.stringify(body),
@@ -162,7 +168,7 @@ export async function chatCompletionStream(
     headers: {
       Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://saleslearn.vercel.app",
+      "HTTP-Referer": "https://saleslearn.aicarengine.com",
       "X-Title": "SalesLearn",
     },
     body: JSON.stringify(body),
