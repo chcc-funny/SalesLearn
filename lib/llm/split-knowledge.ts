@@ -1,10 +1,8 @@
 import { db } from "@/lib/db";
 import { knowledgeBase } from "@/lib/db/schema";
 import { chatCompletionJSON, LLM_MODELS, type ModelId } from "./openrouter";
-import { updateTask } from "./tasks";
 
 interface ProcessFileParams {
-  taskId: string;
   fileUrl: string;
   fileName: string;
   fileContent: string;
@@ -80,69 +78,53 @@ ${fileContent.slice(0, 15000)}
 }
 
 /**
- * 异步处理文件：调用 AI 切分知识点并写入数据库
+ * 调用 AI 切分知识点并写入数据库，返回知识点 ID 列表
  */
 export async function processFileWithAI(
   params: ProcessFileParams
-): Promise<void> {
-  const { taskId, fileContent, fileName, tenantId, createdBy, fileUrl, category, model } =
+): Promise<string[]> {
+  const { fileContent, fileName, tenantId, createdBy, fileUrl, category, model } =
     params;
 
-  try {
-    // 1. 调用 LLM 切分知识点
-    const { data } = await chatCompletionJSON<SplitResult>({
-      model: model ?? LLM_MODELS.KIMI_K2,
-      messages: [
-        { role: "system", content: SPLIT_SYSTEM_PROMPT },
-        { role: "user", content: buildUserPrompt(fileContent, fileName, category) },
-      ],
-      temperature: 0.3,
-      maxTokens: 16384,
-    });
+  // 1. 调用 LLM 切分知识点
+  const { data } = await chatCompletionJSON<SplitResult>({
+    model: model ?? LLM_MODELS.KIMI_K2,
+    messages: [
+      { role: "system", content: SPLIT_SYSTEM_PROMPT },
+      { role: "user", content: buildUserPrompt(fileContent, fileName, category) },
+    ],
+    temperature: 0.3,
+    maxTokens: 16384,
+  });
 
-    const points = data.knowledge_points;
+  const points = data.knowledge_points;
 
-    if (!Array.isArray(points) || points.length === 0) {
-      throw new Error("AI 未能从文件中提取到知识点");
-    }
-
-    // 2. 批量写入数据库
-    const validCategories = ["product", "objection", "closing", "psychology"];
-
-    const rows = points.map((p) => ({
-      tenantId,
-      title: String(p.title).slice(0, 200),
-      category: validCategories.includes(p.category)
-        ? p.category
-        : category ?? "product",
-      keyPoints: Array.isArray(p.key_points) ? p.key_points : [],
-      content: String(p.content),
-      examples: p.examples ? String(p.examples) : null,
-      commonMistakes: p.common_mistakes ? String(p.common_mistakes) : null,
-      status: "reviewing" as const,
-      sourceFileUrl: fileUrl,
-      createdBy,
-    }));
-
-    const inserted = await db
-      .insert(knowledgeBase)
-      .values(rows)
-      .returning({ id: knowledgeBase.id });
-
-    const knowledgeIds = inserted.map((r) => r.id);
-
-    // 3. 标记任务完成
-    updateTask(taskId, {
-      status: "completed",
-      knowledgeIds,
-      completedAt: new Date(),
-    });
-  } catch (err) {
-    updateTask(taskId, {
-      status: "failed",
-      error: err instanceof Error ? err.message : "AI 切分处理失败",
-      completedAt: new Date(),
-    });
-    throw err;
+  if (!Array.isArray(points) || points.length === 0) {
+    throw new Error("AI 未能从文件中提取到知识点");
   }
+
+  // 2. 批量写入数据库
+  const validCategories = ["product", "objection", "closing", "psychology"];
+
+  const rows = points.map((p) => ({
+    tenantId,
+    title: String(p.title).slice(0, 200),
+    category: validCategories.includes(p.category)
+      ? p.category
+      : category ?? "product",
+    keyPoints: Array.isArray(p.key_points) ? p.key_points : [],
+    content: String(p.content),
+    examples: p.examples ? String(p.examples) : null,
+    commonMistakes: p.common_mistakes ? String(p.common_mistakes) : null,
+    status: "reviewing" as const,
+    sourceFileUrl: fileUrl,
+    createdBy,
+  }));
+
+  const inserted = await db
+    .insert(knowledgeBase)
+    .values(rows)
+    .returning({ id: knowledgeBase.id });
+
+  return inserted.map((r) => r.id);
 }

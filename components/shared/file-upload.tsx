@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 type UploadStatus = "idle" | "uploading" | "processing" | "completed" | "failed";
 
 interface FileUploadProps {
-  onUploadComplete?: (taskId: string) => void;
+  onUploadStart?: () => void;
+  onUploadComplete?: (result: { knowledgeIds: string[] }) => void;
   onError?: (error: string) => void;
   category?: string;
   model?: string;
@@ -22,6 +23,7 @@ const STATUS_LABELS: Record<UploadStatus, string> = {
 };
 
 export function FileUpload({
+  onUploadStart,
   onUploadComplete,
   onError,
   category,
@@ -39,12 +41,15 @@ export function FileUpload({
       setFileName(file.name);
       setError("");
       setStatus("uploading");
+      onUploadStart?.();
 
       try {
         const formData = new FormData();
         formData.append("file", file);
         if (category) formData.append("category", category);
         if (model) formData.append("model", model);
+
+        setStatus("processing");
 
         const res = await fetch("/api/knowledge/upload", {
           method: "POST",
@@ -54,11 +59,11 @@ export function FileUpload({
         const json = await res.json();
 
         if (!json.success) {
-          throw new Error(json.error ?? "上传失败");
+          throw new Error(json.error ?? "切分失败");
         }
 
-        setStatus("processing");
-        onUploadComplete?.(json.data.taskId);
+        setStatus("completed");
+        onUploadComplete?.(json.data);
       } catch (err) {
         const message = err instanceof Error ? err.message : "上传失败";
         setError(message);
@@ -66,7 +71,7 @@ export function FileUpload({
         onError?.(message);
       }
     },
-    [category, model, onUploadComplete, onError]
+    [category, model, onUploadStart, onUploadComplete, onError]
   );
 
   function handleDragOver(e: React.DragEvent) {

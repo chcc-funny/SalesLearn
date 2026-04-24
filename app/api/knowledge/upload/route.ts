@@ -6,11 +6,13 @@ import {
   ErrorCode,
 } from "@/lib/api-response";
 import { uploadFile } from "@/lib/storage/blob";
-import { createTask, updateTask } from "@/lib/llm/tasks";
 import { processFileWithAI } from "@/lib/llm/split-knowledge";
 import { LLM_MODELS, type ModelId } from "@/lib/llm/openrouter";
 
 const VALID_MODELS = new Set<string>(Object.values(LLM_MODELS));
+
+/** Vercel 函数超时：最大 300s */
+export const maxDuration = 120;
 
 export const POST = withAuth(
   async (req: NextRequest, { user }) => {
@@ -31,18 +33,8 @@ export const POST = withAuth(
       // 1. 上传文件到 Vercel Blob
       const uploadResult = await uploadFile(file, "knowledge-uploads");
 
-      // 2. 创建任务记录
-      const task = createTask({
-        tenantId: user.tenantId,
-        createdBy: user.id,
-        originalFileName: file.name,
-        fileUrl: uploadResult.url,
-        category: category ?? undefined,
-      });
-
-      // 3. 异步触发 AI 切分（不 await，立即返回 taskId）
-      processFileWithAI({
-        taskId: task.id,
+      // 2. 同步执行 AI 切分（await 确保 Vercel 不会提前回收函数）
+      const knowledgeIds = await processFileWithAI({
         fileUrl: uploadResult.url,
         fileName: file.name,
         fileContent: await file.text(),
@@ -50,19 +42,13 @@ export const POST = withAuth(
         createdBy: user.id,
         category: category ?? undefined,
         model,
-      }).catch((err) => {
-        updateTask(task.id, {
-          status: "failed",
-          error: err instanceof Error ? err.message : "AI 切分失败",
-          completedAt: new Date(),
-        });
       });
 
-      // 4. 同步返回 taskId
+      // 3. 返回结果
       return successResponse({
-        taskId: task.id,
         originalFileName: file.name,
-        status: "processing" as const,
+        knowledgeIds,
+        status: "completed" as const,
       });
     } catch (err) {
       const message =

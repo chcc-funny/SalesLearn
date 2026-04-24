@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { FileUpload } from "@/components/shared/file-upload";
-import { useTaskPolling } from "@/hooks/use-task-polling";
-import { useState } from "react";
 import { LLM_MODELS } from "@/lib/llm/openrouter";
 
 const MODEL_OPTIONS = [
@@ -23,21 +21,36 @@ const MODEL_OPTIONS = [
   { value: LLM_MODELS.CLAUDE_HAIKU, label: "Claude Haiku 4.5（快速省钱）" },
 ];
 
+type UploadResult = {
+  knowledgeIds: string[];
+  error?: string;
+};
+
 export default function UploadKnowledgePage() {
   const router = useRouter();
   const [category, setCategory] = useState<string>("");
   const [model, setModel] = useState<string>(LLM_MODELS.KIMI_K2);
+  const [status, setStatus] = useState<"idle" | "processing" | "completed" | "failed">("idle");
+  const [result, setResult] = useState<UploadResult | null>(null);
 
-  const handleComplete = useCallback(() => {
-    // onComplete callback — no action needed, UI updates via status
-  }, []);
+  async function handleUploadComplete(response: { knowledgeIds: string[] }) {
+    setResult(response);
+    setStatus("completed");
+  }
 
-  const { status: taskStatus, result, startPolling, reset } = useTaskPolling({
-    onComplete: handleComplete,
-  });
+  function handleUploadError(error: string) {
+    setResult({ knowledgeIds: [], error });
+    setStatus("failed");
+  }
 
-  function handleUploadComplete(taskId: string) {
-    startPolling(taskId);
+  function handleUploadStart() {
+    setStatus("processing");
+    setResult(null);
+  }
+
+  function handleReset() {
+    setStatus("idle");
+    setResult(null);
   }
 
   return (
@@ -98,11 +111,13 @@ export default function UploadKnowledgePage() {
           <FileUpload
             category={category === "auto" ? undefined : category || undefined}
             model={model}
+            onUploadStart={handleUploadStart}
             onUploadComplete={handleUploadComplete}
+            onError={handleUploadError}
           />
 
           {/* 切分状态 */}
-          {taskStatus === "processing" && (
+          {status === "processing" && (
             <div className="rounded-lg bg-primary-50 p-4">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 animate-pulse rounded-full bg-primary-500" />
@@ -111,12 +126,12 @@ export default function UploadKnowledgePage() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-text-tertiary">
-                通常需要 10-30 秒，请耐心等待
+                通常需要 30-90 秒，请勿关闭页面
               </p>
             </div>
           )}
 
-          {taskStatus === "completed" && result && (
+          {status === "completed" && result && (
             <div className="rounded-lg bg-success-bg p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -142,9 +157,7 @@ export default function UploadKnowledgePage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    reset();
-                  }}
+                  onClick={handleReset}
                 >
                   继续上传
                 </Button>
@@ -152,7 +165,7 @@ export default function UploadKnowledgePage() {
             </div>
           )}
 
-          {taskStatus === "failed" && result && (
+          {status === "failed" && result && (
             <div className="rounded-lg bg-error-bg p-4">
               <p className="text-sm font-medium text-error">切分失败</p>
               <p className="mt-1 text-xs text-text-secondary">
