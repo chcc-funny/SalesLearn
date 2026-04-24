@@ -9,6 +9,7 @@ interface FileUploadProps {
   onUploadComplete?: (taskId: string) => void;
   onError?: (error: string) => void;
   category?: string;
+  model?: string;
   accept?: string;
 }
 
@@ -24,6 +25,7 @@ export function FileUpload({
   onUploadComplete,
   onError,
   category,
+  model,
   accept = ".pdf,.txt,.md,.docx",
 }: FileUploadProps) {
   const [status, setStatus] = useState<UploadStatus>("idle");
@@ -42,6 +44,7 @@ export function FileUpload({
         const formData = new FormData();
         formData.append("file", file);
         if (category) formData.append("category", category);
+        if (model) formData.append("model", model);
 
         const res = await fetch("/api/knowledge/upload", {
           method: "POST",
@@ -63,7 +66,7 @@ export function FileUpload({
         onError?.(message);
       }
     },
-    [category, onUploadComplete, onError]
+    [category, model, onUploadComplete, onError]
   );
 
   function handleDragOver(e: React.DragEvent) {

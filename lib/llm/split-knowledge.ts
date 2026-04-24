@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { knowledgeBase } from "@/lib/db/schema";
-import { chatCompletionJSON, LLM_MODELS } from "./openrouter";
+import { chatCompletionJSON, LLM_MODELS, type ModelId } from "./openrouter";
 import { updateTask } from "./tasks";
 
 interface ProcessFileParams {
@@ -11,6 +11,7 @@ interface ProcessFileParams {
   tenantId: string;
   createdBy: string;
   category?: string;
+  model?: ModelId;
 }
 
 interface SplitKnowledgeItem {
@@ -84,13 +85,13 @@ ${fileContent.slice(0, 15000)}
 export async function processFileWithAI(
   params: ProcessFileParams
 ): Promise<void> {
-  const { taskId, fileContent, fileName, tenantId, createdBy, fileUrl, category } =
+  const { taskId, fileContent, fileName, tenantId, createdBy, fileUrl, category, model } =
     params;
 
   try {
-    // 1. 调用 Kimi K2 切分知识点
+    // 1. 调用 LLM 切分知识点
     const { data } = await chatCompletionJSON<SplitResult>({
-      model: LLM_MODELS.KIMI_K2,
+      model: model ?? LLM_MODELS.KIMI_K2,
       messages: [
         { role: "system", content: SPLIT_SYSTEM_PROMPT },
         { role: "user", content: buildUserPrompt(fileContent, fileName, category) },

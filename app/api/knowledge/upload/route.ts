@@ -8,6 +8,9 @@ import {
 import { uploadFile } from "@/lib/storage/blob";
 import { createTask, updateTask } from "@/lib/llm/tasks";
 import { processFileWithAI } from "@/lib/llm/split-knowledge";
+import { LLM_MODELS, type ModelId } from "@/lib/llm/openrouter";
+
+const VALID_MODELS = new Set<string>(Object.values(LLM_MODELS));
 
 export const POST = withAuth(
   async (req: NextRequest, { user }) => {
@@ -15,6 +18,8 @@ export const POST = withAuth(
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
       const category = formData.get("category") as string | null;
+      const modelRaw = formData.get("model") as string | null;
+      const model = modelRaw && VALID_MODELS.has(modelRaw) ? (modelRaw as ModelId) : undefined;
 
       if (!file) {
         return errorResponse("请选择要上传的文件", ErrorCode.VALIDATION_ERROR);
@@ -41,6 +46,7 @@ export const POST = withAuth(
         tenantId: user.tenantId,
         createdBy: user.id,
         category: category ?? undefined,
+        model,
       }).catch((err) => {
         updateTask(task.id, {
           status: "failed",

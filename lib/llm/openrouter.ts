@@ -5,7 +5,7 @@ const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 /** 预定义模型常量 */
 export const LLM_MODELS = {
   /** 知识切分、出题 — 成本优化 */
-  KIMI_K2: "moonshotai/kimi-k2",
+  KIMI_K2: "moonshotai/kimi-k2.6",
   /** 费曼评分、客户追问 — 质量优先 */
   CLAUDE_SONNET: "anthropic/claude-sonnet-4-20250514",
   /** 短文本任务 — 成本优化 */
@@ -136,13 +136,10 @@ export async function chatCompletionJSON<T>(
   const result = await chatCompletion({ ...options, jsonMode: true });
 
   try {
-    const raw = result.content.trim();
-    // 兼容模型将 JSON 包裹在 markdown 代码块中的情况
-    const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-    const data = JSON.parse(jsonStr) as T;
+    const data = extractJSON<T>(result.content);
     return { data, usage: result.usage };
   } catch {
-    throw new Error("LLM 返回的 JSON 格式无效");
+    throw new Error(`LLM 返回的 JSON 格式无效，原始内容：${result.content.slice(0, 200)}`);
   }
 }
 
@@ -287,4 +284,39 @@ function processLines(
   }
 
   return false;
+}
+
+/**
+ * 从 LLM 输出中提取 JSON，兼容以下格式：
+ * 1. 纯 JSON
+ * 2. ```json ... ``` 代码块
+ * 3. 前后有多余文字，JSON 嵌在其中
+ */
+function extractJSON<T>(raw: string): T {
+  const text = raw.trim();
+
+  // 1. 直接尝试解析
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    // 继续尝试其他方式
+  }
+
+  // 2. 剥离 markdown 代码块（支持多行）
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (codeBlockMatch) {
+    try {
+      return JSON.parse(codeBlockMatch[1].trim()) as T;
+    } catch {
+      // 继续
+    }
+  }
+
+  // 3. 提取第一个完整的 JSON 对象或数组
+  const jsonMatch = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[1]) as T;
+  }
+
+  throw new Error("无法从响应中提取 JSON");
 }

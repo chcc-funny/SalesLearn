@@ -15,10 +15,18 @@ import { Label } from "@/components/ui/label";
 import { FileUpload } from "@/components/shared/file-upload";
 import { useTaskPolling } from "@/hooks/use-task-polling";
 import { useState } from "react";
+import { LLM_MODELS } from "@/lib/llm/openrouter";
+
+const MODEL_OPTIONS = [
+  { value: LLM_MODELS.KIMI_K2, label: "Kimi K2.6（默认，成本优化）" },
+  { value: LLM_MODELS.CLAUDE_SONNET, label: "Claude Sonnet 4（质量优先）" },
+  { value: LLM_MODELS.CLAUDE_HAIKU, label: "Claude Haiku 4.5（快速省钱）" },
+];
 
 export default function UploadKnowledgePage() {
   const router = useRouter();
   const [category, setCategory] = useState<string>("");
+  const [model, setModel] = useState<string>(LLM_MODELS.KIMI_K2);
 
   const handleComplete = useCallback(() => {
     // onComplete callback — no action needed, UI updates via status
@@ -50,26 +58,46 @@ export default function UploadKnowledgePage() {
         </div>
 
         <div className="space-y-6 rounded-lg border bg-surface p-6">
-          {/* 分类预选 */}
-          <div className="space-y-2">
-            <Label>预设分类（选填）</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="自动识别" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">自动识别</SelectItem>
-                <SelectItem value="product">产品知识</SelectItem>
-                <SelectItem value="objection">客户异议</SelectItem>
-                <SelectItem value="closing">成交话术</SelectItem>
-                <SelectItem value="psychology">客户心理</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            {/* 分类预选 */}
+            <div className="space-y-2">
+              <Label>预设分类（选填）</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="自动识别" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">自动识别</SelectItem>
+                  <SelectItem value="product">产品知识</SelectItem>
+                  <SelectItem value="objection">客户异议</SelectItem>
+                  <SelectItem value="closing">成交话术</SelectItem>
+                  <SelectItem value="psychology">客户心理</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* AI 模型选择 */}
+            <div className="space-y-2">
+              <Label>AI 模型</Label>
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODEL_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* 文件上传 */}
           <FileUpload
             category={category === "auto" ? undefined : category || undefined}
+            model={model}
             onUploadComplete={handleUploadComplete}
           />
 
