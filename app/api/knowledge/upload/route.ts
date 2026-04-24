@@ -1,7 +1,6 @@
 import { type NextRequest } from "next/server";
 import { withAuth } from "@/lib/auth/guard";
 import {
-  successResponse,
   errorResponse,
   ErrorCode,
 } from "@/lib/api-response";
@@ -11,8 +10,7 @@ import { LLM_MODELS, type ModelId } from "@/lib/llm/openrouter";
 
 const VALID_MODELS = new Set<string>(Object.values(LLM_MODELS));
 
-/** Vercel 函数超时：最大 300s */
-export const maxDuration = 120;
+export const maxDuration = 60;
 
 export const POST = withAuth(
   async (req: NextRequest, { user }) => {
@@ -32,23 +30,59 @@ export const POST = withAuth(
 
       // 1. 上传文件到 Vercel Blob
       const uploadResult = await uploadFile(file, "knowledge-uploads");
+      const fileContent = await file.text();
+      const fileName = file.name;
 
-      // 2. 同步执行 AI 切分（await 确保 Vercel 不会提前回收函数）
-      const knowledgeIds = await processFileWithAI({
-        fileUrl: uploadResult.url,
-        fileName: file.name,
-        fileContent: await file.text(),
-        tenantId: user.tenantId,
-        createdBy: user.id,
-        category: category ?? undefined,
-        model,
+      // 2. 流式响应：用心跳保持连接，防止 Vercel/浏览器超时
+      const stream = new ReadableStream({
+        async start(controller) {
+          const encoder = new TextEncoder();
+
+          // 每 5 秒发心跳
+          const heartbeat = setInterval(() => {
+            try {
+              controller.enqueue(encoder.encode("data: {\"type\":\"heartbeat\"}\n\n"));
+            } catch {
+              clearInterval(heartbeat);
+            }
+          }, 5000);
+
+          try {
+            const knowledgeIds = await processFileWithAI({
+              fileUrl: uploadResult.url,
+              fileName,
+              fileContent,
+              tenantId: user.tenantId,
+              createdBy: user.id,
+              category: category ?? undefined,
+              model,
+            });
+
+            clearInterval(heartbeat);
+
+            const result = JSON.stringify({
+              type: "completed",
+              data: { originalFileName: fileName, knowledgeIds, status: "completed" },
+            });
+            controller.enqueue(encoder.encode(`data: ${result}\n\n`));
+          } catch (err) {
+            clearInterval(heartbeat);
+
+            const message = err instanceof Error ? err.message : "AI 切分失败";
+            const error = JSON.stringify({ type: "error", error: message });
+            controller.enqueue(encoder.encode(`data: ${error}\n\n`));
+          }
+
+          controller.close();
+        },
       });
 
-      // 3. 返回结果
-      return successResponse({
-        originalFileName: file.name,
-        knowledgeIds,
-        status: "completed" as const,
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+        },
       });
     } catch (err) {
       const message =

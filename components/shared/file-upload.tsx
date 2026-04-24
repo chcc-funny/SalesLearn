@@ -22,6 +22,48 @@ const STATUS_LABELS: Record<UploadStatus, string> = {
   failed: "处理失败",
 };
 
+/**
+ * 读取 SSE 流式响应，解析最终结果
+ */
+async function readSSEResponse(res: Response): Promise<{ knowledgeIds: string[] }> {
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("无法读取响应流");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+
+      const payload = trimmed.slice(5).trim();
+      try {
+        const msg = JSON.parse(payload);
+        if (msg.type === "completed") {
+          reader.cancel();
+          return msg.data;
+        }
+        if (msg.type === "error") {
+          reader.cancel();
+          throw new Error(msg.error);
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message !== payload) throw e;
+      }
+    }
+  }
+
+  throw new Error("服务器未返回结果");
+}
+
 export function FileUpload({
   onUploadStart,
   onUploadComplete,
@@ -56,24 +98,31 @@ export function FileUpload({
           body: formData,
         });
 
+        if (!res.ok) {
+          // 非流式错误响应（参数校验等）
+          const contentType = res.headers.get("content-type") ?? "";
+          if (contentType.includes("application/json")) {
+            const json = await res.json();
+            throw new Error(json.error ?? "切分失败");
+          }
+          throw new Error(`服务器错误 (${res.status})`);
+        }
+
         const contentType = res.headers.get("content-type") ?? "";
-        if (!contentType.includes("application/json")) {
-          const text = await res.text();
-          throw new Error(
-            res.status === 504
-              ? "请求超时，请尝试上传更小的文件或选择更快的模型"
-              : `服务器错误 (${res.status})：${text.slice(0, 100)}`
-          );
+        if (contentType.includes("text/event-stream")) {
+          // 流式响应
+          const data = await readSSEResponse(res);
+          setStatus("completed");
+          onUploadComplete?.(data);
+        } else if (contentType.includes("application/json")) {
+          // 兼容非流式 JSON 响应
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error ?? "切分失败");
+          setStatus("completed");
+          onUploadComplete?.(json.data);
+        } else {
+          throw new Error("未知的响应格式");
         }
-
-        const json = await res.json();
-
-        if (!json.success) {
-          throw new Error(json.error ?? "切分失败");
-        }
-
-        setStatus("completed");
-        onUploadComplete?.(json.data);
       } catch (err) {
         const message = err instanceof Error ? err.message : "上传失败";
         setError(message);
@@ -134,7 +183,6 @@ export function FileUpload({
           disabled={isUploading}
         />
 
-        {/* 状态图标 */}
         <div className="mb-3 text-3xl">
           {status === "idle" && "📄"}
           {status === "uploading" && "⬆️"}
@@ -151,7 +199,6 @@ export function FileUpload({
           <p className="mt-1 text-xs text-text-tertiary">{fileName}</p>
         )}
 
-        {/* 进度动画 */}
         {isUploading && (
           <div className="mt-3 h-1.5 w-48 overflow-hidden rounded-full bg-border">
             <div className="h-full animate-pulse rounded-full bg-primary-500"
