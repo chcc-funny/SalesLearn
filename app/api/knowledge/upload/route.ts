@@ -7,6 +7,7 @@ import {
 import { uploadFile } from "@/lib/storage/blob";
 import { processFileWithAI } from "@/lib/llm/split-knowledge";
 import { LLM_MODELS, type ModelId } from "@/lib/llm/openrouter";
+import { extractText } from "@/lib/file-parser";
 
 const VALID_MODELS = new Set<string>(Object.values(LLM_MODELS));
 
@@ -28,12 +29,17 @@ export const POST = withAuth(
         return errorResponse("请选择要上传的文件", ErrorCode.VALIDATION_ERROR);
       }
 
-      // 1. 上传文件到 Vercel Blob
+      // 1. 解析文件文本内容（支持 txt/md/pdf/docx）
+      const fileContent = await extractText(file);
+      if (!fileContent.trim()) {
+        return errorResponse("文件内容为空，无法提取文本", ErrorCode.VALIDATION_ERROR);
+      }
+
+      // 2. 上传原始文件到 Vercel Blob
       const uploadResult = await uploadFile(file, "knowledge-uploads");
-      const fileContent = await file.text();
       const fileName = file.name;
 
-      // 2. 流式响应：用心跳保持连接，防止 Vercel/浏览器超时
+      // 3. 流式响应：用心跳保持连接，防止 Vercel/浏览器超时
       const stream = new ReadableStream({
         async start(controller) {
           const encoder = new TextEncoder();
