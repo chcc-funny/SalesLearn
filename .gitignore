@@ -48,3 +48,10 @@ next-env.d.ts
 /fix_plan.md
 .ralph/
 .ralphrc
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/tests/e2e/.auth/

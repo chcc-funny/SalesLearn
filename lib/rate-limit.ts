@@ -64,6 +64,13 @@ export function checkRateLimit(
   key: string,
   type: string
 ): { allowed: boolean; retryAfter: number } {
+  // E2E 测试环境绕过限流：避免共享 IP 的测试在第 6 次以后被 5/min 拦截
+  // 仅在显式 E2E_BYPASS_RATE_LIMIT=1 时生效（playwright.config.ts webServer.env 注入）
+  // 注：不基于 NODE_ENV，因为单元测试需验证限流算法本身
+  if (process.env.E2E_BYPASS_RATE_LIMIT === "1") {
+    return { allowed: true, retryAfter: 0 };
+  }
+
   const config = RATE_LIMITS[type] ?? RATE_LIMITS.default;
   const now = Date.now();
   const entry = store.get(key);
