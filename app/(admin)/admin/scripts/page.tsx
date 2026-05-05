@@ -123,6 +123,90 @@ const TAB_LABELS: Record<TabValue, string> = {
   archived: "已归档",
 };
 
+interface ScriptsTableProps {
+  items: ScriptListItemDTO[];
+  isLoading: boolean;
+  onEdit: (id: string) => void;
+  onArchive: (item: ScriptListItemDTO) => void;
+}
+
+function ScriptsTable({ items, isLoading, onEdit, onArchive }: ScriptsTableProps) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[35%]">标题</TableHead>
+          <TableHead>状态</TableHead>
+          <TableHead>标签</TableHead>
+          <TableHead>创建时间</TableHead>
+          <TableHead className="text-right">操作</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {isLoading ? (
+          <TableRow>
+            <TableCell
+              colSpan={5}
+              className="py-12 text-center text-text-tertiary"
+            >
+              加载中...
+            </TableCell>
+          </TableRow>
+        ) : items.length === 0 ? (
+          <TableRow>
+            <TableCell
+              colSpan={5}
+              className="py-12 text-center text-text-tertiary"
+            >
+              暂无话术
+            </TableCell>
+          </TableRow>
+        ) : (
+          items.map((item) => {
+            const cfg = STATUS_MAP[item.status] ?? {
+              label: item.status,
+              variant: "secondary" as const,
+            };
+            const tagNames =
+              item.tags?.map((t) => t.name).filter(Boolean) ?? [];
+            return (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.title}</TableCell>
+                <TableCell>
+                  <Badge variant={cfg.variant}>{cfg.label}</Badge>
+                </TableCell>
+                <TableCell className="text-xs text-text-tertiary">
+                  {tagNames.length > 0 ? tagNames.join(" / ") : "—"}
+                </TableCell>
+                <TableCell className="text-text-tertiary">
+                  {new Date(item.createdAt).toLocaleDateString("zh-CN")}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(item.id)}
+                  >
+                    编辑
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={item.status !== "published"}
+                    onClick={() => onArchive(item)}
+                  >
+                    归档
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })
+        )}
+      </TableBody>
+    </Table>
+  );
+}
+
 export default function AdminScriptsPage() {
   const router = useRouter();
 

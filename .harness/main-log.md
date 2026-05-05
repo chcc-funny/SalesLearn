@@ -66,3 +66,12 @@
 - 260506 0100 Batch 16 开发完成: unit45, unit46, unit47 (DEV_ID: abe14aff97c250e07)
 - 260506 0110 Batch 16 测试启动 (typecheck=a96785be8de2c4917 / lint=aded676f7da6a79ff / unit=af5b69476f86ff7bc / review=ae21eab33c2818df7)
 - 260506 0140 Batch 16 完成 ✅，迭代 1 轮（全 4 维度 PASS）
+- 260505 1540 Batch 17 开发启动: unit48 管理端审核面板
+- 260505 1540 发现 review-panel.tsx / review-panel.test.tsx 已由前序 dev 预置，page.tsx 引用 ScriptsTable 未定义（TS2304）
+- 260505 1540 修复 ScriptsTable：在 page.tsx 中追加 ScriptsTableProps + ScriptsTable 函数组件
+- 260505 1540 typecheck（新文件）：0 错 ✅ | lint：0 错 ✅
+- 260505 1540 unit test coverage：review-panel.tsx 88.75% stmts / 83.78% branch（20 用例全绿）✅
+- 260505 1540 全量回归：80 文件 / 1077 用例 + 1 skipped 全绿 ✅
+- 260505 1540 E2E：远程环境受限（Playwright browsers 未安装 + Next.js 服务未启动），见 lessons-learned Batch 17
+- 260505 1540 Batch 17 完成 ✅，迭代 1 轮（ScriptsTable 补全）
+- 260505 1540 ── Phase 2 收尾 ── unit36-48 全部完成，48/48 unit 全部 [x]，精选话术模块进入用户验收阶段

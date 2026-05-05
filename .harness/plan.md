@@ -170,7 +170,7 @@
   - 单元测试 `tests/unit/generate-dialog.test.tsx`（17 用例全绿）
 - [x] unit47: 员工端集成生成入口 — 依赖: unit46, unit29
   - 在 `/scripts` 页面右上角追加「AI 生成」按钮，触发 dialog；onSubmitted 回调刷新列表
-- [ ] unit48: 管理端「待审核」Tab + 审核界面 `components/admin/scripts/review-panel.tsx` — 依赖: unit32, unit44
+- [x] unit48: 管理端「待审核」Tab + 审核界面 `components/admin/scripts/review-panel.tsx` — 依赖: unit32, unit44
   - pending_review 列表行内 approve / reject + 编辑 edits 字段
   - 单元测试 `tests/unit/review-panel.test.tsx`
   - [VERIFY] Chrome E2E：粘贴问题 → 命中精选 / 未命中生成 → 提交 → 主管审核 → 发布

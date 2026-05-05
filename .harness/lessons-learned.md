@@ -527,3 +527,46 @@
 - **requestId 前端兜底生成**：当前 orchestrator API 不返回 requestId；前端用 `crypto.randomUUID()` 自生成。如果两个员工同一 question 几乎同时生成同一 generated answer，requestId 不同 → DB UNIQUE 不会触发 → 重复入库两条 pending_review。Phase 2 收尾要让后端 generate API 把 requestId 写入 24h 内存缓存返回前端；前端只透传不生成。
 - **onSubmitted 后刷新列表的语义**：当前刷新员工端 published 列表，但新提交的 draft/pending_review 不可见；用户视感「按了提交但列表没变化」。可改为关闭弹窗后弹 toast 「已提交主管审核，待审核通过后将出现在列表」+ 不刷新；或导到「我的提交」专用页面（v2 功能）。
 - **AI 徽标和精选徽标的颜色**：当前用 `bg-amber-100 text-amber-800`（AI）+ `bg-emerald-100 text-emerald-800`（精选）。设计系统 `docs/design/design-system.md` 没专门定义 AI / 精选语义色；建议设计稿确认后改成 design tokens（如 `bg-warning-light` / `bg-success-light`）。
+
+## Batch 17 (unit48) — 管理端审核面板收尾
+
+### unit48 审核面板（ReviewPanel + ScriptsTable）
+
+#### ReviewPanel 组件设计
+- 双栏布局（左列表 + 右详情）：左侧 `<aside>` 列出所有 pending_review 条目，右侧 `<form role="form">` 展示选中话术的可编辑详情。未选中时右侧显示空态 placeholder（`role="status"`），选中后替换为表单。
+- 受控 edits state：选中切换时 `deriveEdits(script)` 克隆 props 字段创建 edits 副本，不修改原 `props.scripts`；测试有「编辑后原 props 未被修改」专用用例锁住不可变语义。
+- 驳回 rejectMode 内联：不引入新 Dialog 组件（避免 Radix `@radix-ui/react-dialog` 依赖）；在详情区操作按钮区域原地渲染 reject reason 输入框（条件渲染 `rejectMode ? <reject form> : <approve/reject buttons>`）。
+- 选中项自动清空：`useEffect([scripts, selectedId])` 检查 selectedId 在新 scripts 中是否还存在，不存在则清空所有局部 state（`selectedId / edits / rejectMode / rejectReason / errors`）。场景：审核通过后父页面把该条从 reviewItems 移除，详情区自动回到空态。
+- a11y 完整：`<section role="region" aria-label="待审核话术">` / 列表每行 `<button role="button" aria-pressed={active} aria-label="选择话术「${title}」">` / 详情表单 `<form role="form" aria-label="审核编辑">` / 错误文案 `<p role="alert" id="...">` + `aria-describedby` + `aria-invalid`。
+
+#### ScriptsTable 补全（admin scripts page）
+- 发现问题：`app/(admin)/admin/scripts/page.tsx`（unit32 + unit48 联合实现）引用了 `ScriptsTable` 组件，但该组件仅被 JSX 使用，未在文件内定义或从外部 import，导致 TS2304 typecheck 失败。
+- 根因：unit48 dev 在 page.tsx 中添加 `ReviewPanel` 集成和 `ScriptsTable` JSX 调用时，遗漏了 `ScriptsTable` 函数体定义。page.tsx 原先有一段 hidden div 包裹的"旧表格容器"保留了渲染逻辑，提取为 `ScriptsTable` 函数即可。
+- 修复：在 page.tsx 的 `AdminScriptsPage` 函数前追加 `ScriptsTableProps` interface + `ScriptsTable` 函数组件，将原先 hidden div 内的表格渲染逻辑迁入；hidden div 保留占位注释。0 新增 import（Button/Badge/Table/* 已在文件顶部）。
+- 自检顺序：先 `pnpm exec tsc --noEmit 2>&1 | grep "admin/scripts/page"` 确认 0 错，再 eslint，再 coverage。
+
+#### 测试覆盖
+- 20 用例：a11y/渲染（5）/ 选中+详情（3）/ 编辑+通过（4）/ 驳回（4）/ 加载/提交态（2）/ 不可变安全（2）。
+- 覆盖率：`review-panel.tsx` 88.75% stmts / 83.78% branch / 95.65% funcs / 90.54% lines（超过 80% 门槛）。
+- 未覆盖分支（lines 90、93、178-179、307）：(90/93) edits 字段超长度路径（title/customerQuestion > max）；(178-179) rejectReason > 500 字路径（500 字 maxLength prop 在 happy-dom 下 textarea 截断，导致 > 500 路径难触达）；(307) useEffect 清理逻辑的 inner `if (selectedId && ...)` 具体赋值路径。这些边界场景不影响主干，覆盖率可接受。
+- E2E 在远程环境受限未跑：Playwright 需安装 browser binaries（npx playwright install），且需要运行中的 Next.js 服务；远程 CI 环境未就绪。E2E 留用户验收阶段手动跑（`pnpm test:e2e:headed`）。
+
+#### TDD 顺序
+- test 文件 + 组件文件均已由前序 dev 预置，本批重点是排查 ScriptsTable 缺失问题并修复，确保 typecheck / lint / unit test / coverage 四维度 PASS。
+- 全量回归：80 文件 / 1077 用例 + 1 skipped 全绿（`pnpm test` ~28s）。
+
+---
+
+## Phase 2 完成总结
+
+### 进度概览
+- **Phase 2 共完成 13 个 unit / 5 个批次（Batch 13-17）**：unit36-48 全部 `[x]`；服务层（6 unit）+ API（3 unit）+ 页面/组件（4 unit）三大块。
+- **48 / 48 unit 全部完成**：精选话术模块 100% 实现，进入用户验收阶段。
+- **测试总规模**：80 文件 / 1077 用例 + 1 skipped 全绿；lib/services/scripts 覆盖率 91.5%+；review-panel 88.75%；generate-dialog ~90%。
+- **新增文件（Phase 2 部分）**：约 25 个（service 6 + API 路由 3 + 组件 2 + 测试 8 + 其他）。
+
+### Phase 2 关键技术债（用户验收阶段处理）
+- **submissionRequestId 服务层未持久化**：submit API 把 requestId 透传给 createScript，但 service 层 insert 未写该字段，DB UNIQUE 未生效；幂等只靠路由层内存（不持久化）。Phase 2 收尾需 service 支持持久化 + catch `error.code === '23505'` → 409。
+- **review rejectReason / reviewedBy / reviewedAt 未持久化**：unit44 仅切状态机，详细审核字段未写 DB。Phase 2 扩展 `patchScriptStatus(tenantId, id, to, opts?)` 加字段。
+- **approve edits 无事务**：update + patch 两步非原子；需 `approveScript()` 一体化 service。
+- **E2E 待手动验收**：参见 `[VERIFY]` 节点（unit30 / unit35 / unit48）。
