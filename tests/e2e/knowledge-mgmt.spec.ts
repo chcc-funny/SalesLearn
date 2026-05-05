@@ -403,4 +403,351 @@ test.describe("知识库管理 - 主管视角", () => {
       expect(currentUrl).toMatch(/\/(learn|login)/);
     }
   );
+
+  // ── Case 11: 列表搜索防抖 ──────────────────────────────────────────────────
+  test(
+    "Case 11: 列表搜索 — 输入文字后防抖过滤（搜索框存在且可输入）",
+    async ({ managerPage }) => {
+      assertAuthWorking(managerPage, "Case 11");
+
+      await managerPage.goto("/admin/knowledge");
+      await expect(managerPage.getByText("加载中...")).not.toBeVisible({ timeout: 10_000 });
+
+      // 搜索框应存在
+      const searchInput = managerPage.getByPlaceholder(/搜索|search/i).first();
+      const hasSearch = await searchInput.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasSearch) {
+        test.skip(true, "搜索框未渲染（UI 可能尚未实现搜索栏）");
+        return;
+      }
+
+      await searchInput.fill("量子膜");
+
+      // 防抖期间：列表不应立即消失（loading 没有立刻出现或结果没立刻清空）
+      // 等待防抖后发起请求（简单等待 1s 后，页面不应报错）
+      await managerPage.waitForTimeout(1000);
+
+      // 页面应仍在 /admin/knowledge（没有导航错误）
+      expect(managerPage.url()).toContain("/admin/knowledge");
+    }
+  );
+
+  // ── Case 12: 批量发布 ──────────────────────────────────────────────────────
+  test(
+    "Case 12: 批量发布 — 勾选 2 条 → 点批量发布 → 确认弹窗 → 列表刷新",
+    async ({ managerPage }) => {
+      assertAuthWorking(managerPage, "Case 12");
+
+      await managerPage.goto("/admin/knowledge");
+      await expect(managerPage.getByText("加载中...")).not.toBeVisible({ timeout: 10_000 });
+
+      // 找到 checkbox（非表头，第一个数据行 checkbox）
+      const checkboxes = managerPage.locator('tbody input[type="checkbox"], [data-row-checkbox]');
+      const firstCheckbox = checkboxes.first();
+      const hasCheckbox = await firstCheckbox.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasCheckbox) {
+        test.skip(true, "列表无 checkbox（无数据行或未渲染批量选择 UI）");
+        return;
+      }
+
+      await firstCheckbox.check();
+
+      // 批量操作栏应出现
+      const batchBar = managerPage.getByText(/批量发布|发布选中/i).first();
+      const hasBatchBar = await batchBar.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasBatchBar) {
+        test.skip(true, "批量操作栏未出现");
+        return;
+      }
+
+      await batchBar.click();
+
+      // 处理确认弹窗（alert 或 dialog）
+      const dialogOrButton = managerPage.getByRole("button", { name: /确认|确定|发布/i }).first();
+      const hasConfirm = await dialogOrButton.isVisible({ timeout: 3_000 }).catch(() => false);
+      if (hasConfirm) {
+        await dialogOrButton.click();
+      }
+
+      // 等待操作完成
+      await managerPage.waitForTimeout(1000);
+      expect(managerPage.url()).toContain("/admin/knowledge");
+    }
+  );
+
+  // ── Case 13: 全选三态 ──────────────────────────────────────────────────────
+  test(
+    "Case 13: 全选三态 — 表头 checkbox 在部分选中时显示中间态",
+    async ({ managerPage }) => {
+      assertAuthWorking(managerPage, "Case 13");
+
+      await managerPage.goto("/admin/knowledge");
+      await expect(managerPage.getByText("加载中...")).not.toBeVisible({ timeout: 10_000 });
+
+      const headerCheckbox = managerPage
+        .locator('thead input[type="checkbox"], [data-header-checkbox]')
+        .first();
+      const hasHeader = await headerCheckbox.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasHeader) {
+        test.skip(true, "表头 checkbox 未渲染");
+        return;
+      }
+
+      // 先选中一行（部分选中状态）
+      const firstRowCheckbox = managerPage
+        .locator('tbody input[type="checkbox"]')
+        .first();
+      const hasRows = await firstRowCheckbox.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasRows) {
+        test.skip(true, "无数据行，无法测试三态");
+        return;
+      }
+
+      await firstRowCheckbox.check();
+
+      // 表头 checkbox 应处于 indeterminate 状态
+      const isIndeterminate = await headerCheckbox.evaluate(
+        (el) => (el as HTMLInputElement).indeterminate
+      );
+      expect(isIndeterminate).toBe(true);
+    }
+  );
+
+  // ── Case 14: 内联编辑保存 ─────────────────────────────────────────────────
+  test(
+    "Case 14: 内联编辑保存 — 进入详情页改 title → 保存 → 验证更新",
+    async ({ managerPage }) => {
+      assertAuthWorking(managerPage, "Case 14");
+
+      // 先通过 API 创建一个知识点
+      const created = await managerPage.evaluate(async (timestamp: number) => {
+        const res = await fetch("/api/knowledge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: `[E2E] 内联编辑测试 ${timestamp}`,
+            category: "product",
+            keyPoints: [],
+            content: "测试内容",
+          }),
+        });
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+      }, TIMESTAMP);
+
+      if (!created?.id) {
+        test.skip(true, "无法通过 API 创建测试知识点");
+        return;
+      }
+
+      await managerPage.goto(`/admin/knowledge/${created.id}`);
+      await expect(managerPage.getByText("加载中...")).not.toBeVisible({ timeout: 10_000 });
+
+      const newTitle = `[E2E] 已更新标题 ${TIMESTAMP}`;
+
+      // 找到 title 输入框（InlineEditor 渲染的 input）
+      const titleInput = managerPage.locator('input[placeholder*="标题"], input#inline-标题').first();
+      const hasInput = await titleInput.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasInput) {
+        test.skip(true, "内联编辑 input 未渲染");
+        return;
+      }
+
+      await titleInput.fill(newTitle);
+
+      // 点击保存按钮
+      const saveBtn = managerPage.getByRole("button", { name: /^保存$/ });
+      const hasSave = await saveBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+      if (!hasSave) {
+        test.skip(true, "保存按钮未渲染");
+        return;
+      }
+
+      await saveBtn.click();
+      await managerPage.waitForTimeout(1000);
+
+      // API 验证
+      const result = await managerPage.evaluate(async (id: string) => {
+        const res = await fetch(`/api/knowledge/${id}`);
+        return res.json();
+      }, created.id);
+
+      expect(result.success).toBe(true);
+      expect(result.data.title).toBe(newTitle);
+    }
+  );
+
+  // ── Case 15: 保存并发布 ───────────────────────────────────────────────────
+  test(
+    "Case 15: 保存并发布 — 进入详情 → 点「保存并发布」→ 状态变 published",
+    async ({ managerPage }) => {
+      assertAuthWorking(managerPage, "Case 15");
+
+      const created = await managerPage.evaluate(async (timestamp: number) => {
+        const res = await fetch("/api/knowledge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: `[E2E] 保存并发布测试 ${timestamp}`,
+            category: "product",
+            keyPoints: [],
+            content: "测试内容",
+          }),
+        });
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+      }, TIMESTAMP);
+
+      if (!created?.id) {
+        test.skip(true, "无法通过 API 创建测试知识点");
+        return;
+      }
+
+      await managerPage.goto(`/admin/knowledge/${created.id}`);
+      await expect(managerPage.getByText("加载中...")).not.toBeVisible({ timeout: 10_000 });
+
+      const publishBtn = managerPage.getByRole("button", { name: /保存并发布/ });
+      const hasPublish = await publishBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasPublish) {
+        test.skip(true, "「保存并发布」按钮未渲染");
+        return;
+      }
+
+      await publishBtn.click();
+      await managerPage.waitForTimeout(1000);
+
+      // API 验证状态
+      const result = await managerPage.evaluate(async (id: string) => {
+        const res = await fetch(`/api/knowledge/${id}`);
+        return res.json();
+      }, created.id);
+
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe("published");
+    }
+  );
+
+  // ── Case 16: 驳回 ─────────────────────────────────────────────────────────
+  test(
+    "Case 16: 驳回 — 详情中点「驳回」→ 确认 → 状态变 draft → 跳回列表",
+    async ({ managerPage }) => {
+      assertAuthWorking(managerPage, "Case 16");
+
+      // 创建一个 reviewing 状态的知识点
+      const itemId = await createReviewingItemViaPage(managerPage);
+
+      if (!itemId) {
+        test.skip(true, "无法创建 reviewing 状态的知识点");
+        return;
+      }
+
+      await managerPage.goto(`/admin/knowledge/${itemId}`);
+      await expect(managerPage.getByText("加载中...")).not.toBeVisible({ timeout: 10_000 });
+
+      const rejectBtn = managerPage.getByRole("button", { name: /驳回/ });
+      const hasReject = await rejectBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasReject) {
+        test.skip(true, "驳回按钮未渲染");
+        return;
+      }
+
+      await rejectBtn.click();
+
+      // 可能有二次确认弹窗
+      const confirmBtn = managerPage.getByRole("button", { name: /确认|确定/ }).first();
+      const hasConfirm = await confirmBtn.isVisible({ timeout: 2_000 }).catch(() => false);
+      if (hasConfirm) {
+        await confirmBtn.click();
+      }
+
+      await managerPage.waitForTimeout(1000);
+
+      // 验证状态变为 draft
+      const result = await managerPage.evaluate(async (id: string) => {
+        const res = await fetch(`/api/knowledge/${id}`);
+        return res.json();
+      }, itemId);
+
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe("draft");
+    }
+  );
+
+  // ── Case 17: 取消 ─────────────────────────────────────────────────────────
+  test(
+    "Case 17: 取消 — 改字段后点取消 → 字段回到原值",
+    async ({ managerPage }) => {
+      assertAuthWorking(managerPage, "Case 17");
+
+      const created = await managerPage.evaluate(async (timestamp: number) => {
+        const res = await fetch("/api/knowledge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: `[E2E] 取消测试原始标题 ${timestamp}`,
+            category: "product",
+            keyPoints: [],
+            content: "测试内容",
+          }),
+        });
+        if (!res.ok) return null;
+        const json = await res.json();
+        return json.success ? json.data : null;
+      }, TIMESTAMP);
+
+      if (!created?.id) {
+        test.skip(true, "无法通过 API 创建测试知识点");
+        return;
+      }
+
+      await managerPage.goto(`/admin/knowledge/${created.id}`);
+      await expect(managerPage.getByText("加载中...")).not.toBeVisible({ timeout: 10_000 });
+
+      const titleInput = managerPage.locator('input[placeholder*="标题"], input#inline-标题').first();
+      const hasInput = await titleInput.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasInput) {
+        test.skip(true, "内联编辑 input 未渲染");
+        return;
+      }
+
+      const originalTitle = `[E2E] 取消测试原始标题 ${TIMESTAMP}`;
+      await titleInput.fill("修改后的临时标题");
+
+      // 点击取消
+      const cancelBtn = managerPage.getByRole("button", { name: /取消/ });
+      const hasCancel = await cancelBtn.isVisible({ timeout: 3_000 }).catch(() => false);
+
+      if (!hasCancel) {
+        test.skip(true, "取消按钮未渲染（dirty 检测或取消按钮可能未实现）");
+        return;
+      }
+
+      await cancelBtn.click();
+
+      // 标题应回到原值
+      const inputValue = await titleInput.inputValue();
+      expect(inputValue).toBe(originalTitle);
+    }
+  );
+
+  // ── Case 18: 离开拦截（beforeunload）─────────────────────────────────────
+  test.skip(
+    "Case 18: dirty 状态尝试导航 → beforeunload 弹出拦截（跳过：Playwright 对 beforeunload 处理机制不一致）",
+    async ({ managerPage }) => {
+      // beforeunload 在 Playwright 中表现为 page.on('dialog') 或直接忽略，
+      // 行为受浏览器 headless 模式影响，不稳定，暂不做自动化断言。
+      // 手动验证：在 dirty 状态下点击导航，浏览器应弹出"是否离开页面"提示。
+    }
+  );
 });

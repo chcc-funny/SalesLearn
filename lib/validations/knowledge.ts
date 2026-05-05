@@ -29,6 +29,32 @@ export const updateKnowledgeSchema = z.object({
   examples: z.string().nullable().optional(),
   commonMistakes: z.string().nullable().optional(),
   images: z.array(z.string()).optional(),
+  status: z.enum(["draft", "reviewing", "published"]).optional(),
 });
 
 export type UpdateKnowledgeInput = z.infer<typeof updateKnowledgeSchema>;
+
+const batchIdsSchema = z
+  .array(z.string().uuid("ID 必须是合法的 UUID"))
+  .min(1, "至少选择一个知识点")
+  .max(100, "一次最多操作 100 个知识点");
+
+export const batchKnowledgeSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("publish"),
+    ids: batchIdsSchema,
+  }),
+  z.object({
+    action: z.literal("delete"),
+    ids: batchIdsSchema,
+  }),
+  z.object({
+    action: z.literal("setCategory"),
+    ids: batchIdsSchema,
+    category: z.enum(["product", "objection", "closing", "psychology"], {
+      message: "分类必须是 product/objection/closing/psychology 之一",
+    }),
+  }),
+]);
+
+export type BatchKnowledgeInput = z.infer<typeof batchKnowledgeSchema>;

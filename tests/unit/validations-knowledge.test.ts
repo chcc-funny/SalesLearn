@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { createKnowledgeSchema, updateKnowledgeSchema } from "@/lib/validations/knowledge";
+import {
+  createKnowledgeSchema,
+  updateKnowledgeSchema,
+  batchKnowledgeSchema,
+} from "@/lib/validations/knowledge";
 
 describe("createKnowledgeSchema", () => {
   const validInput = {
@@ -109,6 +113,155 @@ describe("updateKnowledgeSchema", () => {
 
   it("rejects empty title string on update", () => {
     const result = updateKnowledgeSchema.safeParse({ title: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("包含 status=published 合法", () => {
+    const result = updateKnowledgeSchema.safeParse({ status: "published" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.status).toBe("published");
+    }
+  });
+
+  it("包含 status=reviewing 合法", () => {
+    const result = updateKnowledgeSchema.safeParse({ status: "reviewing" });
+    expect(result.success).toBe(true);
+  });
+
+  it("包含 status=draft 合法", () => {
+    const result = updateKnowledgeSchema.safeParse({ status: "draft" });
+    expect(result.success).toBe(true);
+  });
+
+  it("包含 status=invalid 返回报错", () => {
+    const result = updateKnowledgeSchema.safeParse({ status: "invalid" });
+    expect(result.success).toBe(false);
+  });
+});
+
+const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+const VALID_UUID_2 = "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e";
+
+describe("batchKnowledgeSchema", () => {
+  describe("publish action", () => {
+    it("publish 合法", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "publish",
+        ids: [VALID_UUID],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("publish 多个 ids 合法", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "publish",
+        ids: [VALID_UUID, VALID_UUID_2],
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("delete action", () => {
+    it("delete 合法", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "delete",
+        ids: [VALID_UUID],
+      });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("setCategory action", () => {
+    it("setCategory 合法", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "setCategory",
+        ids: [VALID_UUID],
+        category: "product",
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.action).toBe("setCategory");
+        if (result.data.action === "setCategory") {
+          expect(result.data.category).toBe("product");
+        }
+      }
+    });
+
+    it("setCategory 缺少 category 字段 → 报错", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "setCategory",
+        ids: [VALID_UUID],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("setCategory category 为非法值 → 报错", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "setCategory",
+        ids: [VALID_UUID],
+        category: "bad_cat",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("ids 校验", () => {
+    it("ids 为空数组 → 报错", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "publish",
+        ids: [],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain("至少选择一个");
+      }
+    });
+
+    it("ids 超过 100 个 → 报错", () => {
+      const ids = Array.from({ length: 101 }, (_, i) => {
+        const hex = i.toString(16).padStart(8, "0");
+        return `${hex}-e5f6-4a7b-8c9d-0e1f2a3b4c5d`;
+      });
+      const result = batchKnowledgeSchema.safeParse({
+        action: "publish",
+        ids,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain("100");
+      }
+    });
+
+    it("ids 恰好 100 个 → 合法", () => {
+      const ids = Array.from({ length: 100 }, (_, i) => {
+        const hex = i.toString(16).padStart(8, "0");
+        return `${hex}-e5f6-4a7b-8c9d-0e1f2a3b4c5d`;
+      });
+      const result = batchKnowledgeSchema.safeParse({
+        action: "delete",
+        ids,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("非法 UUID → 报错", () => {
+      const result = batchKnowledgeSchema.safeParse({
+        action: "publish",
+        ids: ["not-a-valid-uuid"],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain("UUID");
+      }
+    });
+  });
+
+  it("非法 action → 报错", () => {
+    const result = batchKnowledgeSchema.safeParse({
+      action: "badAction",
+      ids: [VALID_UUID],
+    });
     expect(result.success).toBe(false);
   });
 });

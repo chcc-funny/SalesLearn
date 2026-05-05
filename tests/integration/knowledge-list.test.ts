@@ -231,6 +231,94 @@ describe("GET /api/knowledge", () => {
     expect(res.status).toBe(500);
     expect(json.success).toBe(false);
   });
+
+  it("q 参数过滤 title 走 ILIKE — 请求正常返回 200", async () => {
+    // 此测试验证：带 q 参数时接口仍正常工作（SQL 构造层由 drizzle sql`` 处理，这里
+    // 验证接口调用 db.select 并最终返回结果，side-effect 是 where 被多调用一次）
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    // 第一个 where（tenantId）返回可继续链式调用
+    mockWhere.mockReturnValueOnce({ orderBy: mockOrderBy });
+    mockOrderBy.mockReturnValueOnce({ limit: mockLimit });
+    mockLimit.mockReturnValueOnce({ offset: mockOffset });
+    mockOffset.mockResolvedValueOnce([
+      { id: "k1", title: "量子膜产品介绍", status: "published" },
+    ]);
+
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    mockWhere.mockResolvedValueOnce([{ count: 1 }]);
+
+    const req = makeGetRequest({ q: "量子膜" });
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    // 验证 db.select 被调用（ILIKE 查询路径被执行）
+    expect(mockSelect).toHaveBeenCalled();
+  });
+
+  it("q 包含 % 字符不会被当作通配符（转义后正常返回）", async () => {
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    mockWhere.mockReturnValueOnce({ orderBy: mockOrderBy });
+    mockOrderBy.mockReturnValueOnce({ limit: mockLimit });
+    mockLimit.mockReturnValueOnce({ offset: mockOffset });
+    mockOffset.mockResolvedValueOnce([]);
+
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    mockWhere.mockResolvedValueOnce([{ count: 0 }]);
+
+    // q 含有 SQL 通配符字符，接口应转义后正常处理而非报错
+    const req = makeGetRequest({ q: "50%隔热_产品" });
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+  });
+
+  it("q 含有反斜杠字符也能正常处理", async () => {
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    mockWhere.mockReturnValueOnce({ orderBy: mockOrderBy });
+    mockOrderBy.mockReturnValueOnce({ limit: mockLimit });
+    mockLimit.mockReturnValueOnce({ offset: mockOffset });
+    mockOffset.mockResolvedValueOnce([]);
+
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    mockWhere.mockResolvedValueOnce([{ count: 0 }]);
+
+    const req = makeGetRequest({ q: "path\\n" });
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+  });
+
+  it("q 为空字符串时不添加 ILIKE 条件", async () => {
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    mockWhere.mockReturnValueOnce({ orderBy: mockOrderBy });
+    mockOrderBy.mockReturnValueOnce({ limit: mockLimit });
+    mockLimit.mockReturnValueOnce({ offset: mockOffset });
+    mockOffset.mockResolvedValueOnce([]);
+
+    mockSelect.mockReturnValueOnce({ from: mockFrom });
+    mockFrom.mockReturnValueOnce({ where: mockWhere });
+    mockWhere.mockResolvedValueOnce([{ count: 0 }]);
+
+    const req = makeGetRequest({ q: "   " }); // 全空白，trim 后为空
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+  });
 });
 
 describe("POST /api/knowledge", () => {

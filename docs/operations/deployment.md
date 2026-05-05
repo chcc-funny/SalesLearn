@@ -31,7 +31,7 @@ DATABASE_URL=postgresql://...@neon.tech/saleslearn
 
 # NextAuth.js
 NEXTAUTH_SECRET=<random-secret>
-NEXTAUTH_URL=https://saleslearn.vercel.app
+NEXTAUTH_URL=https://saleslearn.aicarengine.com
 
 # OpenRouter (LLM)
 OPENROUTER_API_KEY=<api-key>

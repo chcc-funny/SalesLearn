@@ -2,9 +2,9 @@
 title: SalesLearn - 测试执行进度
 category: development
 tags: [测试, 进度, 覆盖率]
-version: 2.3.0
+version: 2.6.0
 created: 2026-04-23
-last_updated: 2026-04-28
+last_updated: 2026-04-29
 status: completed
 ---
 
@@ -14,13 +14,13 @@ status: completed
 
 | 项目 | 状态 |
 |------|------|
-| 最近执行日期 | 2026-04-28 |
+| 最近执行日期 | 2026-04-29 |
 | 测试框架 | Vitest (单元/集成) + Playwright (E2E) |
-| 总体覆盖率 | **89.52% Stmts / 79.26% Branch / 89.53% Funcs / 90.20% Lines**（已测模块） |
-| 单元/集成用例 | **253 通过 / 0 失败 / 1 跳过**（共 254，27 个测试文件） |
-| E2E 用例 | **32 通过 / 0 失败 / 9 跳过**（共 41，5 个 spec 文件） |
+| 总体覆盖率 | **89.57% Stmts / 79.26% Branch / 89.53% Funcs / 90.24% Lines**（已测模块） |
+| 单元/集成用例 | **445 通过 / 0 失败 / 1 跳过**（共 446，40 个测试文件） |
+| E2E 用例 | **41 通过 / 0 失败 / 8 跳过**（共 49，5 个 spec 文件） |
 | CI/CD | ✅ GitHub Actions（`.github/workflows/test.yml`，3 个并行 Job） |
-| 总体状态 | ✅ **Phase 5 / 6 / 7 全部完成**；测试体系完整就绪 |
+| 总体状态 | ✅ **Phase 5 / 6 / 7 / 9 全部完成**；v2.6 完成 Stage 2：补齐剩余 5 个未测 API（题库 GET 3 个 + 切分任务 1 个 + 费曼记录 1 个）；API 路由集成测试覆盖率 100% |
 
 > 注：覆盖率统计基于 v8 provider 实际加载到的 `lib/**/*.ts` 文件。
 > 集成测试通过 `vi.mock` 替换大部分 lib 模块，因此这些文件在集成测试运行时不会被计入覆盖率分母，仅在对应单元测试中被加载并计入。
@@ -51,8 +51,10 @@ status: completed
 | tencent-asr.test.ts | lib/asr/tencent-asr.ts | 12 (+1 跳过) | ✅ 通过 | 63.1% | 48.8% |
 | tencent-signature.test.ts | lib/asr/tencent-signature.ts | 14 | ✅ 通过 | — | — |
 | env.test.ts | lib/env.ts | 7 | ✅ 通过 | 68.4% | 85.7% |
-| validations-knowledge.test.ts | lib/validations/knowledge.ts | 13 | ✅ 通过 | — | — |
-| **合计** | | **200 (+1 跳过)** | ✅ | | |
+| validations-knowledge.test.ts | lib/validations/knowledge.ts | 34 | ✅ 通过 | — | — |
+| use-debounce.test.ts | hooks/use-debounce.ts | 6 | ✅ 通过 | — | — |
+| inline-editor.test.tsx | components/admin/knowledge/inline-editor.tsx | 13 | ✅ 通过 | — | — |
+| **合计** | | **229 (+1 跳过)** | ✅ | | |
 
 ### 1.2 集成测试 (8 个文件)
 
@@ -60,13 +62,24 @@ status: completed
 |---------|---------|--------|------|
 | quiz-answer.test.ts | POST /api/quiz/answer | 5 | ✅ 通过 |
 | review-update.test.ts | POST /api/review/update | 6 | ✅ 通过 |
-| knowledge-list.test.ts | GET/POST /api/knowledge | 10 | ✅ 通过 |
+| knowledge-list.test.ts | GET/POST /api/knowledge | 14 | ✅ 通过 |
 | knowledge-upload.test.ts | POST /api/knowledge/upload | 6 | ✅ 通过 |
 | knowledge-review.test.ts | POST /api/knowledge/[id]/review | 6 | ✅ 通过 |
+| knowledge-detail.test.ts | GET/PUT/DELETE /api/knowledge/[id] | 20 | ✅ 通过 |
+| knowledge-batch.test.ts | PATCH /api/knowledge/batch | 12 | ✅ 通过 |
 | quiz-generate.test.ts | POST /api/quiz/generate | 6 | ✅ 通过 |
 | learning-progress.test.ts | GET /api/learning/progress | 5 | ✅ 通过 |
 | review-list.test.ts | GET /api/review/list | 4 | ✅ 通过 |
-| **合计** | | **48** | ✅ |
+| feynman-evaluate.test.ts | POST /api/feynman/evaluate | 25 | ✅ 通过 |
+| feynman-chat.test.ts | POST /api/feynman/chat（SSE） | 17 | ✅ 通过 |
+| feynman-upload-audio.test.ts | POST /api/feynman/upload-audio | 12 | ✅ 通过 |
+| feynman-transcribe.test.ts | POST /api/feynman/transcribe | 18 | ✅ 通过 |
+| quiz-list.test.ts | GET /api/quiz | 8 | ✅ 通过 |
+| quiz-by-knowledge.test.ts | GET /api/quiz/by-knowledge/[knowledgeId] | 8 | ✅ 通过 |
+| quiz-review.test.ts | POST /api/quiz/[id]/review | 12 | ✅ 通过 |
+| knowledge-tasks.test.ts | GET /api/knowledge/tasks/[taskId] | 10 | ✅ 通过 |
+| feynman-records.test.ts | GET /api/feynman/records | 12 | ✅ 通过 |
+| **合计** | | **217** | ✅ |
 
 ### 1.3 E2E 验证 (手动 curl + Chrome)
 
@@ -82,16 +95,16 @@ status: completed
 ### 1.4 E2E 自动化测试 (Playwright)
 
 执行命令：`npm run test:e2e`（webServer 自动启动 dev server，注入 `E2E_BYPASS_RATE_LIMIT=1`）。
-最近一次完整执行：**2026-04-28，41 用例 32 通过 / 0 失败 / 9 跳过，约 1.9 min**。
+最近一次完整执行：**2026-04-28，49 用例 41 通过 / 0 失败 / 8 跳过，约 2.0 min**。
 
 | 测试文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
 |---------|--------|------|------|------|------|
 | smoke.spec.ts | 3 | 3 | 0 | 0 | 全部通过：未登录保护、登录页加载、员工登录后跳转 /learn |
 | login.spec.ts | 6 | 5 | 0 | 1 | 1 个跳过（已登录访问 /login 自动重定向 — 此 middleware 行为未实现） |
 | learn-quiz.spec.ts | 10 | 10 | 0 | 0 | 全部通过：分类卡片、知识点卡片、答题流程、成绩页、进度持久化 |
-| knowledge-mgmt.spec.ts | 10 | 8 | 0 | 2 | Case 7/8 跳过（API 暂不支持直接修改 status，需扩展接口） |
+| knowledge-mgmt.spec.ts | 18 | 17 | 0 | 1 | v2.4：Case 7/8 解锁 + 新增 Case 11-18；仅 Case 18 skip（beforeunload 拦截在 Playwright headless 不稳定） |
 | feynman.spec.ts | 12 | 6 | 0 | 6 | TC-F05/F06/F08/F09/F10/F12 跳过（依赖真实 LLM / 录音 UI / 跨页面状态，详见"未来工作"） |
-| **合计** | **41** | **32** | **0** | **9** | 通过率 78%；含跳过总成功率 100% |
+| **合计** | **49** | **41** | **0** | **8** | 通过率 84%；含跳过总成功率 100% |
 
 基础设施关键修复（v2.2 → v2.3）：
 - `lib/rate-limit.ts` 添加 `E2E_BYPASS_RATE_LIMIT=1` 早返回，绕过 5/min 的 auth 限流
@@ -133,24 +146,25 @@ status: completed
 |---------|---------|------|
 | POST /api/quiz/answer | ✅ 已测 | quiz-answer.test.ts (5 用例) |
 | POST /api/review/update | ✅ 已测 | review-update.test.ts (6 用例) |
-| GET/POST /api/knowledge | ✅ 已测 | knowledge-list.test.ts (10 用例) |
-| GET/PUT/DELETE /api/knowledge/[id] | ❌ 未测 | 知识点详情操作 |
+| GET/POST /api/knowledge | ✅ 已测 | knowledge-list.test.ts (14 用例) |
+| GET/PUT/DELETE /api/knowledge/[id] | ✅ 已测 | knowledge-detail.test.ts (20 用例) |
+| PATCH /api/knowledge/batch | ✅ 已测 | knowledge-batch.test.ts (12 用例) |
 | POST /api/knowledge/upload | ✅ 已测 | knowledge-upload.test.ts (6 用例) |
 | POST /api/knowledge/[id]/review | ✅ 已测 | knowledge-review.test.ts (6 用例) |
-| GET /api/knowledge/tasks/[taskId] | ❌ 未测 | 切分任务状态 |
+| GET /api/knowledge/tasks/[taskId] | ✅ 已测 | knowledge-tasks.test.ts (10 用例) |
 | POST /api/quiz/generate | ✅ 已测 | quiz-generate.test.ts (6 用例) |
-| GET /api/quiz | ❌ 未测 | 题目列表 |
-| GET /api/quiz/by-knowledge/[knowledgeId] | ❌ 未测 | 按知识点查题 |
-| GET /api/quiz/[id]/review | ❌ 未测 | 题目复习 |
+| GET /api/quiz | ✅ 已测 | quiz-list.test.ts (8 用例) |
+| GET /api/quiz/by-knowledge/[knowledgeId] | ✅ 已测 | quiz-by-knowledge.test.ts (8 用例) |
+| POST /api/quiz/[id]/review | ✅ 已测 | quiz-review.test.ts (12 用例) |
 | GET /api/learning/progress | ✅ 已测 | learning-progress.test.ts (5 用例) |
-| POST /api/feynman/upload-audio | ❌ 未测 | 音频上传 |
-| POST /api/feynman/transcribe | ❌ 未测 | 语音转文字 |
-| POST /api/feynman/evaluate | ❌ 未测 | 费曼评分 |
-| POST /api/feynman/chat | ❌ 未测 | 费曼追问对话 |
-| GET /api/feynman/records | ❌ 未测 | 费曼记录 |
+| POST /api/feynman/upload-audio | ✅ 已测 | feynman-upload-audio.test.ts (12 用例) |
+| POST /api/feynman/transcribe | ✅ 已测 | feynman-transcribe.test.ts (18 用例) |
+| POST /api/feynman/evaluate | ✅ 已测 | feynman-evaluate.test.ts (25 用例) |
+| POST /api/feynman/chat | ✅ 已测 | feynman-chat.test.ts (17 用例) |
+| GET /api/feynman/records | ✅ 已测 | feynman-records.test.ts (12 用例) |
 | GET /api/review/list | ✅ 已测 | review-list.test.ts (4 用例) |
 
-进度：18 个 API 路由中已测 8 个（44.4%）→ Phase 6 P0/P1 全部完成，剩余为 P2 费曼/复习相关。
+进度：19 个 API 路由中已测 19 个（100%）→ 全部 API 集成测试覆盖完成。
 另：所有费曼相关 API 在 E2E 中已通过 `feynman.spec.ts` 进行了端到端冒烟覆盖（部分依赖真实 LLM 的 case 跳过）。
 
 ---
@@ -203,6 +217,10 @@ status: completed
 | 14 | INFO | Phase 7 全部 6 个子项（7.1-7.6）完成 | ✅ 已完成 |
 | 15 | INFO | 4 个 E2E spec strict-mode locator 问题（learn-quiz × 2、knowledge-mgmt × 1、feynman × 1） | ✅ 已修复 |
 | 16 | INFO | rate-limit + NEXTAUTH_SECRET 污染 | ✅ 已修复（v2.2/v2.3） |
+| 17 | HIGH | PUT /api/knowledge/[id] UPDATE WHERE 缺少 tenantId 过滤（理论竞态/防御性） | ✅ 已修复（v2.4） |
+| 18 | HIGH | 批量删除 FK 错误提示不清晰（让用户以为只是部分失败，实际整批回滚） | ✅ 已修复（v2.4） |
+| 19 | INFO | `app/api/quiz/[id]/review/route.ts` 实际为 POST（题目审核），文档原 §三表格误标为 GET，已在 v2.6 修正 | ✅ 已修正 |
+| 20 | INFO | `lib/llm/tasks.ts` 的 `TaskStatus` 类型仅定义 `processing \| completed \| failed`，无 `pending` 状态，路由实现一致 | ℹ️ 已确认 |
 
 ---
 
@@ -236,11 +254,13 @@ status: completed
 | P0 | POST /api/knowledge/upload | 6 | ✅ 完成 |
 | P0 | POST /api/knowledge/[id]/review | 6 | ✅ 完成 |
 | P1 | GET /api/learning/progress | 5 | ✅ 完成 |
-| P1 | POST /api/feynman/evaluate | — | ⏳ 待办（P1 剩余，已通过 E2E 部分覆盖） |
-| P1 | POST /api/feynman/chat | — | ⏳ 待办（P1 剩余，已通过 E2E 部分覆盖） |
+| P1 | POST /api/feynman/evaluate | 25 | ✅ 完成 |
+| P1 | POST /api/feynman/chat | 17 | ✅ 完成 |
 | P1 | GET /api/review/list | 4 | ✅ 完成 |
-| P2 | POST /api/feynman/upload-audio | — | ⏳ 待办 |
-| P2 | POST /api/feynman/transcribe | — | ⏳ 待办 |
+| P2 | POST /api/feynman/upload-audio | 12 | ✅ 完成 |
+| P2 | POST /api/feynman/transcribe | 18 | ✅ 完成 |
+
+> 备注：Phase 6 之外补齐 5 个未列入原计划的 GET API（v2.6）：quiz-list / quiz-by-knowledge / quiz-review / knowledge-tasks / feynman-records，合计 50 用例，全部通过。
 
 ### Phase 7: E2E 自动化搭建 ✅ 已完成
 
@@ -260,6 +280,15 @@ status: completed
 | 8.1 | OWASP Top 10 安全扫描 |
 | 8.2 | API 端点鉴权测试（全量路由） |
 | 8.3 | 基础性能测试（API 响应时间基准） |
+
+### Phase 9: 知识库审核体验优化测试 ✅ 已完成
+
+| 步骤 | 内容 | 状态 |
+|------|------|------|
+| 9.1 | 单元测试扩展：validations-knowledge (+21) / use-debounce (6) / inline-editor (13) | ✅ 完成 |
+| 9.2 | 集成测试新增：knowledge-batch (12) / knowledge-detail (20)；knowledge-list 扩展 (+4) | ✅ 完成 |
+| 9.3 | E2E 扩展：knowledge-mgmt.spec.ts Cases 11-17 (7 新) + Case 18 skip (beforeunload) | ✅ 完成 |
+| 9.4 | Code Review 修复：HIGH-1 tenantId 双重过滤 / HIGH-3 FK 错误提示明确 | ✅ 完成 |
 
 ---
 
@@ -302,7 +331,8 @@ status: completed
 | 阶段 | 目标覆盖率 | 状态 | 完成日期 |
 |------|-----------|------|---------|
 | Phase 5 完成（单元测试） | ~60% | ✅ 已完成（已测模块 89.52%） | 2026-04-26 |
-| Phase 6 完成（集成测试） | ~75% | ✅ P0/P1 完成（剩费曼相关 API 待办） | 2026-04-27 |
+| Phase 6 完成（集成测试） | ~75% | ✅ **全部完成**：P0/P1/P2 费曼相关 API + Stage 2 剩余 5 个 GET API 集成测试全部覆盖，新增 122 用例 | **2026-04-29** |
+| 全 API 集成测试覆盖 | 100% | ✅ **已完成** | **2026-04-29** |
 | Phase 7 完成（E2E + CI） | 80%+ (含 E2E) | ✅ **已完成**：5 spec / 41 用例 / 32 通过 / 0 失败 / 9 跳过；GitHub Actions CI 就绪 | **2026-04-28** |
 | Phase 8 完成（安全 & 性能） | 80%+ (安全达标) | 🔶 待启动 | — |
 
@@ -318,12 +348,11 @@ status: completed
 |------|------|---------|
 | 「已登录访问 /login → 重定向到对应主页」 | `middleware.ts` 当前未对已认证用户访问 `/login` 做反向重定向 | 在 middleware 中读取 NextAuth token，若已登录则按 role 重定向到 `/learn` 或 `/admin` |
 
-### 9.2 knowledge-mgmt.spec.ts（2 个跳过）
+### 9.2 knowledge-mgmt.spec.ts（1 个跳过）
 
 | 用例 | 原因 | 修复条件 |
 |------|------|---------|
-| Case 7: 通过审核 → 状态变为 `published` | `/api/knowledge/[id]/review` 当前不接受 `status` 字段，且测试用例需要直接置 status，与现有「审核通过」语义不完全对齐 | 扩展审核 API 支持 `{ action: "approve" }` 显式语义，或暴露 `PATCH /api/knowledge/[id]` 仅供测试 / 高权限角色 |
-| Case 8: 拒绝审核 → 状态变回 `draft` | 同上，API 不支持改 `status` 字段 | 同上 |
+| Case 18: dirty 状态尝试导航 → beforeunload 弹出拦截 | Playwright 对 beforeunload 处理机制不一致，行为受浏览器 headless 模式影响，不稳定 | 手动验证或使用浏览器原生自动化框架（如 Selenium）；或通过 page.on('dialog') 监听但无法保证捕获 |
 
 ### 9.3 feynman.spec.ts（6 个跳过）
 
@@ -346,6 +375,9 @@ status: completed
 
 ## 更新日志
 
+- **2026-04-29**: v2.6 — Stage 2 完成 — 补齐 5 个剩余 API 集成测试（quiz-list 8 / quiz-by-knowledge 8 / quiz-review 12 / knowledge-tasks 10 / feynman-records 12 = 50 用例），全部通过；API 路由集成测试覆盖率 73.68% → 100%（19/19）；总用例 396 → 446；测试文件 35 → 40
+- **2026-04-29**: v2.5 — Phase 6 收尾 — 新增 4 个费曼 API 集成测试（feynman-evaluate 25 / feynman-chat 17 / feynman-upload-audio 12 / feynman-transcribe 18 = 72 用例），全部通过；P2 费曼相关 API 全部覆盖；总用例数从 324 → 396（API 路由覆盖率 52.6% → 73.68%）
+- **2026-04-28**: v2.4 — 知识库审核工作流改进 — 内联编辑/批量操作/搜索 + 31 条新测试（单元 +29、集成 +47、E2E +8）+ 解锁原 Case 7/8 + HIGH 2 项已修 + Phase 9 完成
 - **2026-04-28**: v2.3 — Phase 7 完成 — E2E 5 个 spec 共 ~40 用例，GitHub Actions CI 就绪，测试体系完整
 - **2026-04-27**: v2.2 — E2E 自动化搭建 — 4 个 spec 共 ~30 用例，修复 rate-limit 阻塞与 NEXTAUTH_SECRET 污染
 - **2026-04-27**: v2.1 — Phase 5/6 完成 — 新增 14 个单元测试文件 + 6 个集成测试文件，总用例数从 62 → ~250+，lib/auth/* lib/llm/* 覆盖率全部达标

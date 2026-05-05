@@ -9,6 +9,7 @@ export default function AdminPage() {
 
   const menuItems = [
     { title: "知识库管理", desc: "上传、切分、发布知识点", href: "/admin/knowledge" },
+    { title: "精选话术", desc: "话术库管理与审核（开发中）", href: "/admin/scripts" },
     { title: "审核管理", desc: "审核知识点和题目", href: "/admin/review" },
     { title: "团队看板", desc: "查看团队学习数据", href: "/admin/team" },
   ];

@@ -75,13 +75,24 @@ export const PUT = withAuth(
         return errorResponse("知识点不存在", ErrorCode.NOT_FOUND);
       }
 
+      const reviewedFields =
+        parsed.data.status === "published"
+          ? { reviewedBy: user.id, reviewedAt: new Date() }
+          : {};
+
       const [updated] = await db
         .update(knowledgeBase)
         .set({
           ...parsed.data,
+          ...reviewedFields,
           updatedAt: new Date(),
         })
-        .where(eq(knowledgeBase.id, id))
+        .where(
+          and(
+            eq(knowledgeBase.id, id),
+            eq(knowledgeBase.tenantId, user.tenantId)
+          )
+        )
         .returning();
 
       return successResponse(updated);

@@ -17,6 +17,7 @@ export const GET = withAuth(async (req: NextRequest, { user }) => {
   const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? "20")));
   const status = searchParams.get("status");
   const category = searchParams.get("category");
+  const q = searchParams.get("q")?.trim();
 
   try {
     // 构建 where 条件
@@ -33,6 +34,13 @@ export const GET = withAuth(async (req: NextRequest, { user }) => {
 
     if (category) {
       conditions.push(eq(knowledgeBase.category, category));
+    }
+
+    if (q) {
+      const escaped = q.replace(/[\\%_]/g, (c) => `\\${c}`);
+      conditions.push(
+        sql`${knowledgeBase.title} ILIKE ${`%${escaped}%`}`
+      );
     }
 
     const where = and(...conditions);

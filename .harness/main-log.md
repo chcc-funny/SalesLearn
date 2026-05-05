@@ -1,0 +1,68 @@
+# Harness 主日志 — Scripts 模块
+
+- 260501 1200 项目启动，任务源：docs/features/scripts/progress.md
+- 260501 1200 项目目录：/Users/funnyliu/Documents/SalesLearn
+- 260501 1200 任务源未完成项总数：43（含 Phase 1 MVP + Phase 2 AI）
+- 260501 1200 配置：BATCH_SIZE=3，DIMENSIONS=typecheck/lint/unit-test/code-review，FIX_MAX_ROUNDS=3
+- 260501 1200 子 Agent 模板已安装到 .claude/agents/（planner/dev/4 个 tester）
+- 260501 1215 计划完成，plan.md 已生成 (PLANNER_ID: a35287a35d8ff6d5a)
+- 260501 1215 拆分结果：48 个 unit，17 个批次
+- 260501 1230 Batch 1 开发完成: unit01, unit02, unit04 (DEV_ID: af60a6fc348727ebe)
+- 260501 1245 Batch 1 首测部分到达：typecheck/lint/unit-test 三维度全 PASS（unit01/02/04）
+- 260501 1245 Tester ID: typecheck=a5e1b4522b1019faf / lint=a546546b23393fc22 / unit=a8740126e63b2c410 / review=addd3c11bfd4a9bc1
+- 260501 1310 Batch 1 code-review 完成 PASS（unit01/02/04 全 PASS）
+- 260501 1310 Batch 1 完成 ✅，迭代 1 轮，无修正
+- 260501 1320 Batch 2 开发完成: unit03, unit05, unit06 (DEV_ID: aff1e298e25218305)
+- 260501 1325 Batch 2 测试启动 (typecheck=ad5694be5983651cb / lint=a2d18720153ab8152 / unit=a16ec66425106705d / review=abec248301e1a3708)
+- 260501 1335 Batch 2 完成 ✅，迭代 1 轮（typecheck/lint/unit/review 全 PASS）
+- 260501 1345 Batch 3 开发完成: unit07, unit08, unit10 (DEV_ID: af86bd3d617b4ef28)
+- 260501 1350 Batch 3 测试启动 (typecheck=a8c2cb8a5f3358ec1 / lint=a3e925e1001c1b7fe / unit=ad69c19fd29784823 / review=a33970c8e4370ce90)
+- 260501 1410 Batch 3 完成 ✅，迭代 1 轮（typecheck/lint/unit/review 全 PASS）
+- 260501 1430 Batch 4 开发完成: unit09, unit11, unit12 (DEV_ID: a52648634b33a2c79)
+- 260501 1432 Batch 4 测试启动 (typecheck=a21de3f26a573625b / lint=a9f57f334184f6ce2 / unit=a27c43057eee350aa / review=a9cb232f855d23da2)
+- 260501 1450 Batch 4 首测：typecheck PASS / lint unit12 FAIL / unit PASS / review PASS（含 unit12 HIGH 警告 TOCTOU）
+- 260501 1450 启动修正第 1 轮：lint + HIGH 警告
+- 260505 0900 Batch 4 修正完成 (FIX_DEV_ID: a28b87c1a801540bf)
+- 260505 0900 重测启动 lint=a2a0039e683ba5b14, unit=a6df733fa448922d4
+- 260505 0930 Batch 4 完成 ✅，迭代 2 轮（修正 lint + TOCTOU）
+- 260505 0950 Batch 5 开发完成: unit13, unit14, unit15 (DEV_ID: ab88c397d4f81fab2)
+- 260505 0955 Batch 5 测试启动 (typecheck=a73c70883a6955914 / lint=ae6c9a17ce6a7ebd9 / unit=affe89a9367bab69a / review=a920ed3a02ea9affc)
+- 260505 1020 Batch 5 完成 ✅，迭代 1 轮（全 4 维度 PASS）
+- 260505 1020 Batch 5 备注：unit15 LOW（员工传 status=draft 时可见租户内全部草稿）需用户确认 PRD 语义；如错则改 repository OR 分支
+- 260505 1100 Batch 6 开发完成: unit16, unit17, unit18 (DEV_ID: a49b1607cd7b06558)
+- 260505 1110 Batch 6 测试启动 (typecheck=adc51054718824203 / lint=a488c1fb619a67da5 / unit=aba982b12746bed28 / review=a296f38b3a8fe9160)
+- 260505 1140 Batch 6 完成 ✅，迭代 1 轮（全 4 维度 PASS）
+- 260505 1230 Batch 7 开发完成: unit19, unit20, unit21 (DEV_ID: a912bd2d75b50a3fd)
+- 260505 1245 Batch 7 测试启动 (typecheck=a8e31a6ca585350b8 / lint=ae5c3504a781f144c / unit=a7b3a1759ac244754 / review=a0ed117a498011371)
+- 260505 1310 Batch 7 完成 ✅，迭代 1 轮（全 4 维度 PASS，46 集成用例全绿）
+- 260505 1340 Batch 8 开发完成: unit22, unit23, unit24 (DEV_ID: abfed7f5a1754c544)
+- 260505 1350 Batch 8 测试启动 (typecheck=a66a3433f639fc69b / lint=a8b2105aede0d0b8f / unit=a8e539e66414e040a / review=a5725ff239b9ef30a)
+- 260505 1430 Batch 8 完成 ✅，迭代 1 轮（全 4 维度 PASS，61 集成用例全绿）
+- 260505 1500 Batch 9 开发完成: unit25, unit26, unit27 (DEV_ID: a29f3788e32f5c698)
+- 260505 1510 Batch 9 测试启动 (typecheck=a37113c3433f7a2d9 / lint=aad99ea283b481abb / unit=abedd47910e6bb763 / review=aef45ea0455071fba)
+- 260505 1545 Batch 9 完成 ✅，迭代 1 轮（全 4 维度 PASS）
+- 260505 1620 Batch 10 开发完成: unit28, unit29, unit30 (DEV_ID: a9003a80178e0d06a)
+- 260505 1630 Batch 10 测试启动 (typecheck=a5494e77c2f3b7e8f / lint=a144dd22b27da4a67 / unit=aaae7a79720535992 / review=a6881ba009c43293e)
+- 260505 1700 Batch 10 完成 ✅，迭代 1 轮（全 4 维度 PASS）
+- 260505 1745 Batch 11 开发完成: unit31, unit32, unit33 (DEV_ID: ae8c8b2d0f0d72c72)
+- 260505 1755 Batch 11 测试启动 (typecheck=aaf36dee377688785 / lint=aeef2049db7ffcc13 / unit=aa12b5ab0c1edbd9a / review=ae51d913894d44b19)
+- 260505 1830 Batch 11 完成 ✅，迭代 1 轮（全 4 维度 PASS）
+- 260505 1900 Batch 12 开发完成: unit34, unit35（Phase 1 收尾）(DEV_ID: a28b7b34a60bf47fc)
+- 260505 1910 Batch 12 测试启动 (typecheck=ad25c123bd6c4fbd1 / lint=ab9ad6a90ab92ca85 / unit=a05b81c33cf5ec6f0 / review=a908f9c556d2d9615)
+- 260505 1945 Batch 12 完成 ✅，迭代 1 轮
+- 260505 1945 ── Phase 1 收尾 ── unit01-35 全部完成（12 批次，46 个集成测试 + 295+ 个单测，scripts service 覆盖率 91.5%）
+- 260505 2030 Batch 13 开发完成: unit36, unit37, unit38 (DEV_ID: a95a3d9d026e877dd)
+- 260505 2040 Batch 13 测试启动 (typecheck=a7812e989e7b378eb / lint=ae2d0a39efb3082b1 / unit=ac4d4fd36484b46d3 / review=a94364677f42b2042)
+- 260505 2110 Batch 13 完成 ✅，迭代 1 轮（全 4 维度 PASS，覆盖率 97-100%）
+- 260505 2200 Batch 14 开发完成: unit39, unit40, unit41 (DEV_ID: a0d1c18509faa10ff)
+- 260505 2210 Batch 14 测试启动 (typecheck=a29c459de2861d833 / lint=afd0e05db2bf196a6 / unit=a824ed9cbad53d9f1 / review=a1aa9807d49d0dd46)
+- 260505 2240 Batch 14 完成 ✅，迭代 1 轮（全 4 维度 PASS，覆盖率 100%）
+- 260505 2330 Batch 15 开发完成: unit42, unit43, unit44 (DEV_ID: a024ab2d8088048e8)
+- 260505 2340 Batch 15 测试启动 (typecheck=a276c4a83f4e2618a / lint=a61bf16329fd6a605 / unit=a5ff7295cc1bc14c3 / review=afb71456a682db8ef)
+- 260505 2355 Batch 15 首测：typecheck/unit/review PASS，lint unit44 FAIL（1 unused var）
+- 260505 2355 启动修正第 1 轮（仅 lint）
+- 260506 0010 Batch 15 修正完成（FIX_DEV_ID: ade4c8aa263f01db6），unit44 lint 已 PASS
+- 260506 0010 Batch 15 完成 ✅，迭代 2 轮
+- 260506 0100 Batch 16 开发完成: unit45, unit46, unit47 (DEV_ID: abe14aff97c250e07)
+- 260506 0110 Batch 16 测试启动 (typecheck=a96785be8de2c4917 / lint=aded676f7da6a79ff / unit=af5b69476f86ff7bc / review=ae21eab33c2818df7)
+- 260506 0140 Batch 16 完成 ✅，迭代 1 轮（全 4 维度 PASS）
