@@ -40,6 +40,7 @@ const CATEGORIES = [
 
 const TAB_ITEMS = [
   { key: "learn", label: "学习", icon: "📚", path: "/learn" },
+  { key: "scripts", label: "话术", icon: "💡", path: "/scripts" },
   { key: "test", label: "测试", icon: "📝", path: "/test" },
   { key: "feynman", label: "讲解", icon: "🎤", path: "/feynman" },
   { key: "dashboard", label: "我的", icon: "👤", path: "/dashboard" },

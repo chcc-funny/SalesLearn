@@ -18,6 +18,7 @@ import { eq } from "drizzle-orm";
 import { users } from "./schema/users";
 import { knowledgeBase } from "./schema/knowledge-base";
 import { questions } from "./schema/questions";
+import { seedScriptTags } from "./seed-script-tags";
 
 // 默认租户 ID
 const TENANT_ID = "00000000-0000-0000-0000-000000000001";
@@ -49,6 +50,9 @@ async function seed() {
 
   if (existingUsers.length > 0) {
     console.log("⚠️ 种子数据已存在，跳过插入。如需重新插入请先清空数据库。");
+    // 标签 seed 单独保证幂等：即便用户已存在，仍补齐缺失的初始标签
+    const tagResult = await seedScriptTags(db, TENANT_ID);
+    console.log(`✓ 已确保初始话术标签存在（共 ${tagResult.attempted} 条）`);
     return;
   }
 
@@ -204,6 +208,11 @@ async function seed() {
   ]);
 
   console.log("✓ 已创建 3 道示例题目");
+
+  // 4. 创建精选话术初始标签（场景 7 + 产品 5）
+  const tagResult = await seedScriptTags(db, TENANT_ID);
+  console.log(`✓ 已创建初始话术标签（共 ${tagResult.attempted} 条）`);
+
   console.log("种子数据插入完成！");
 }
 

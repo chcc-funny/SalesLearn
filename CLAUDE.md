@@ -40,6 +40,11 @@
 - `@docs/development/testing-strategy.md` - 测试策略（TDD、分层测试、Mock策略）
 - `@docs/development/testing-progress.md` - 测试执行进度（用例通过率、覆盖率、问题跟踪）
 
+### 功能模块文档
+- `@docs/features/scripts/README.md` - 精选话术（Scripts）方案设计（数据模型、API、检索/生成、审核闭环）
+- `@docs/features/scripts/progress.md` - 精选话术实施进度跟踪
+- `@docs/features/scripts/test-progress.md` - 精选话术测试进度跟踪（单元/集成/E2E 用例清单）
+
 ## 核心模块
 
 1. **知识库管理**：资料上传 → AI 切分 → 人工审核 → 发布

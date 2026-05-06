@@ -5,3 +5,7 @@ export * from "./user-test-records";
 export * from "./user-learning-progress";
 export * from "./user-feynman-records";
 export * from "./error-book";
+export * from "./scripts";
+export * from "./script-tags";
+export * from "./script-tag-relations";
+export * from "./script-copy-logs";

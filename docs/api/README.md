@@ -14,7 +14,7 @@ status: active
 
 | 项目 | 值 |
 |---|---|
-| Base URL | `https://saleslearn.vercel.app/api` |
+| Base URL | `https://saleslearn.aicarengine.com/api` |
 | 协议 | HTTPS |
 | 数据格式 | JSON |
 | 认证方式 | Bearer Token (JWT via NextAuth.js) |
@@ -101,11 +101,12 @@ NextAuth.js 标准认证端点，支持员工/主管双角色登录。
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/knowledge` | 知识点列表（分页 + 状态筛选 + 分类筛选） |
+| GET | `/api/knowledge` | 知识点列表（分页 + 状态筛选 + 分类筛选 + 搜索） |
 | POST | `/api/knowledge` | 创建知识点（参数校验 + tenant_id 注入） |
 | GET | `/api/knowledge/[id]` | 知识点详情 |
-| PUT | `/api/knowledge/[id]` | 更新知识点 |
+| PUT | `/api/knowledge/[id]` | 更新知识点（支持 status 字段） |
 | DELETE | `/api/knowledge/[id]` | 删除知识点 |
+| PATCH | `/api/knowledge/batch` | 批量操作（发布/删除/改分类） |
 | POST | `/api/knowledge/upload` | 文件上传 + AI 切分触发 |
 | GET | `/api/knowledge/tasks/[taskId]` | 切分任务进度查询 |
 | POST | `/api/knowledge/[id]/review` | 审核（通过/驳回） |
@@ -172,3 +173,110 @@ X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 0
 X-RateLimit-Reset: 1619000000
 ```
+
+---
+
+## 知识库 API 详细说明
+
+### GET /api/knowledge - 列表查询 + 搜索
+
+**查询参数**：
+```
+?page=1&limit=20&status=published&category=product&q=搜索关键词
+```
+
+- `q` (可选)：按 title 模糊搜索（ILIKE，自动转义通配符 `%/_/\\`）
+- `status` (可选)：筛选状态（draft / reviewing / published / rejected）
+- `category` (可选)：筛选分类（product / service 等）
+- `page`, `limit`：分页参数
+
+**响应示例**：
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "title": "量子膜产品介绍",
+      "status": "published",
+      "category": "product",
+      "reviewedBy": "manager_id",
+      "reviewedAt": "2026-04-28T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 42,
+    "page": 1,
+    "limit": 20
+  }
+}
+```
+
+### PUT /api/knowledge/[id] - 更新（支持直接发布）
+
+**请求体**：
+```json
+{
+  "title": "新标题",
+  "category": "product",
+  "content": "内容",
+  "keyPoints": ["点1", "点2"],
+  "status": "draft"  // 可选：draft / reviewing / published
+}
+```
+
+- `status=published` 时，API 自动填充 `reviewedBy`（当前用户）和 `reviewedAt`（当前时间）
+- 请求会强制绑定 `WHERE tenant_id = current_tenant_id`（防御性检查）
+- 权限：manager 角色
+
+**响应**：更新后的完整对象，包含 `reviewedBy` 和 `reviewedAt`（如适用）
+
+### PATCH /api/knowledge/batch - 批量操作
+
+**请求体示例（发布）**：
+```json
+{
+  "action": "publish",
+  "ids": ["uuid1", "uuid2"],
+  "payload": {}
+}
+```
+
+**请求体示例（改分类）**：
+```json
+{
+  "action": "setCategory",
+  "ids": ["uuid1", "uuid2"],
+  "payload": { "category": "service" }
+}
+```
+
+**请求体示例（删除）**：
+```json
+{
+  "action": "delete",
+  "ids": ["uuid1", "uuid2"],
+  "payload": {}
+}
+```
+
+**限制**：
+- `ids` 数组长度 1-100
+- 所有 id 必须是有效 UUID
+- 所有操作强制绑定 `WHERE tenant_id = current_tenant_id`
+
+**错误处理**：
+- FK 错误（如删除有依赖项）返回 409，明确提示"整批操作已回滚，请检查依赖关系"
+- 部分 id 无效返回 400，详细说明失败原因
+
+**响应**：
+```json
+{
+  "success": true,
+  "data": {
+    "affected": 2
+  }
+}
+```
+
+**权限**：manager 角色

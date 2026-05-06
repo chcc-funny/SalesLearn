@@ -183,6 +183,7 @@ export default function ReviewPage() {
         <div className="mx-auto flex max-w-lg">
           {[
             { key: "learn", label: "学习", icon: "📚", path: "/learn" },
+            { key: "scripts", label: "话术", icon: "💡", path: "/scripts" },
             { key: "test", label: "测试", icon: "📝", path: "/test" },
             { key: "review", label: "错题", icon: "🔄", path: "/review" },
             { key: "feynman", label: "讲解", icon: "🎤", path: "/feynman" },
